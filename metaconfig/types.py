@@ -12,22 +12,6 @@ class MetaFieldClass:
         self.validate(value)
         return value
 
-    # @property
-    # def label(self):
-    #     return self._label
-
-    # @property
-    # def default(self):
-    #     return self._default
-
-    # @property
-    # def hint(self):
-    #     return self._hint
-
-    # @property
-    # def value(self):
-    #     return self._value
-
     def _set(self, value):
         if not value is None:
             self._value = self.normalize(value)
