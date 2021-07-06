@@ -1,6 +1,6 @@
 # demo usage
 
-from metaconfig.types import IntField, Fieldset, ConfigRoot, ListField
+from metaconfig import IntField, Fieldset, ConfigRoot, ListField
 
 class ABSum(Fieldset):
     a:int = IntField(label='Значение А', default=1)
