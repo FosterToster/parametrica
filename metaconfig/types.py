@@ -9,6 +9,9 @@ class MetaFieldClass:
         pass
 
     def normalize(self, value):
+        if value is None:
+            return self._default
+
         self.validate(value)
         return value
 
@@ -17,6 +20,17 @@ class MetaFieldClass:
             self._value = self.normalize(value)
 
     def _get(self):
+        return self._value
+
+    def as_metadata(self):
+        return {
+            'type': self.__class__.__name__,
+            'default': self._default,
+            'label': self._label,
+            'hint': self._hint
+        }
+
+    def as_dataset(self):
         return self._value
 
     
@@ -48,8 +62,10 @@ class FloatField(MetaFieldClass):
 
 
 class BoolField(MetaFieldClass):
-    def normalize(self, value):    
-        if type(value) is int:
+    def normalize(self, value):   
+        if self._value is None:
+            return self._default 
+        elif type(value) is int:
             return value != 0
         elif type(value) is str:
             if value.strip().lower() == 'true':
@@ -66,11 +82,11 @@ class BoolField(MetaFieldClass):
 
 
 class ListField(MetaFieldClass):
-    def __init__(self, handled_type, *, label, default:list, hint=''):
-        if not issubclass(handled_type, MetaFieldClass):
-            raise ValueError('handled type of ListField must be a MetaFieldClass')
+    def __init__(self, member_type:MetaFieldClass, *, label, default:list, hint=''):
+        if not issubclass(type(member_type), MetaFieldClass):
+            raise ValueError('handled type of ListField must be a object of MetaFieldClass')
 
-        self._handled_type = handled_type
+        self._member_type = member_type
 
         super().__init__(label=label, default=default, hint=hint)
 
@@ -81,19 +97,38 @@ class ListField(MetaFieldClass):
         return super().validate(value)
 
     def normalize(self, value:list):
+        if value is None:
+            return self._default
+
         self.validate(value)
 
         result = list()
         for data in value:
-            if type(data) is self._handled_type:
-                result.append(data)
-            else: 
-                result.append(self._handled_type(label='', hint='', default=data))
+            result.append(self._member_type.normalize(data))
         
         return result
 
-    def _get(self):
-        return [data._get() for data in self._value]
+    def _set(self, value):
+        self._value = self.normalize(value)
+        self._datalist = list()
+        for data in self._value:
+            self._datalist.append(
+                type(self._member_type)(
+
+                    label=self._member_type._label,
+                    hint=self._member_type._hint,
+                    default=data
+                )
+            )
+
+    # def _get(self):
+    #     return [data._get() for data in self._value]
+
+    def as_metadata(self):
+        return {
+            **super().as_metadata(),
+            'member_type': self._member_type.as_metadata()
+        }
 
 
 class Fieldset(MetaFieldClass):
@@ -102,28 +137,43 @@ class Fieldset(MetaFieldClass):
         for field in dir(self):
             if field.startswith('_'):
                 continue
-            if issubclass(type(getattr(self, field)), MetaFieldClass):
+            if issubclass(type(getattr(self, f'@{field}')), MetaFieldClass):
                 self.__metafields.append(field)
-
+        
         super().__init__(label=label, default=default, hint=hint)
 
     def validate(self, value:dict):
         if not type(value) is dict:
             raise ValueError(f'Value of type {type(value)} is not compatible with Fieldset')
+
+    def normalize(self, value:dict):
+        if value is None:
+            return self._default
+
+        self.validate(value)
+        dataset = dict()
         
-    def _set(self, value:dict):
         for metafield_name in self.__metafields:
-            metafield = getattr(self, metafield_name)
+            metafield = getattr(self, f'@{metafield_name}')
             try:
-                metafield._set(value.get(metafield_name))
+                dataset[metafield_name] = metafield.normalize(value.get(metafield_name))
             except ValueError as e:
                 e.args = (f'{self.__class__.__name__}.{metafield_name}: '+str(e))
                 raise e
 
+        return dataset
+
+    def _set(self, value):
+        self._value = self.normalize(value)
+        for key, val in self._value:
+            getattr(f'@{key}')._set(val)
+            
     def _get(self):
         return self
 
     def __getattribute__(self, name: str):
+        if name.startswith('@'):
+            return super().__getattribute__(name[1:])
         content = super().__getattribute__(name)
         if name.startswith('_'):
             return content
@@ -133,9 +183,29 @@ class Fieldset(MetaFieldClass):
         else:
             return content
 
+    def as_metadata(self):
+        return {
+            **super().as_metadata(),
+            **dict((f'@{member_name}', getattr(self, f'@{member_name}').as_metadata()) for member_name in self.__metafields)
+        }
+
         
 class ConfigRoot(Fieldset):
     def __init__(self):
         super().__init__(label='', hint='')
+
+    @classmethod
+    def as_metadata(class_):
+        result = dict()
+
+        for metafield in dir(class_):
+            if metafield.startswith('_'):
+                continue
+
+            if issubclass(type(getattr(class_, metafield)), MetaFieldClass):
+                result[metafield] = getattr(class_, metafield).as_metadata()
+        
+        return result
+
 
     
