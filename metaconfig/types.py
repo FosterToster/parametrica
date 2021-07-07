@@ -29,6 +29,42 @@ class IntField(MetaFieldClass):
         return int(super().normalize(value))
 
 
+class StrField(MetaFieldClass):
+    def validate(self, value):
+        if not type(value) in (int, str, float, bool):
+            raise ValueError(f'Value of type {type(value).__name__} is not compatible with StrField')
+        
+    def normalize(self, value):
+        return str(super().normalize(value))
+
+
+class FloatField(MetaFieldClass):
+    def validate(self, value):
+        if not type(value) in (int, str, float):
+            raise ValueError(f'Value of type {type(value).__name__} is not compatible with FloatField')
+    
+    def normalize(self, value):
+        return float(super().normalize(value))
+
+
+class BoolField(MetaFieldClass):
+    def normalize(self, value):    
+        if type(value) is int:
+            return value != 0
+        elif type(value) is str:
+            if value.strip().lower() == 'true':
+                return True
+            elif value.strip().lower() == 'false':
+                return False
+            else:
+                raise ValueError(f'Value "{value}" is not compatible with BoolField')
+        elif type(value) == bool:
+            return value
+        else:
+            raise ValueError(f'Value of type {type(value).__name__} is not compatible with BoolField')
+        
+
+
 class ListField(MetaFieldClass):
     def __init__(self, handled_type, *, label, default:list, hint=''):
         if not issubclass(handled_type, MetaFieldClass):
