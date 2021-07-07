@@ -3,7 +3,8 @@ class MetaFieldClass:
         self._label = label
         self._default = self.normalize(default)
         self._hint = hint
-        self._value = self._default
+        self._set(self._default)
+        # self._value = self._default
 
     def validate(self, value):
         pass
@@ -105,11 +106,14 @@ class ListField(MetaFieldClass):
         result = list()
         for data in value:
             result.append(self._member_type.normalize(data))
+
+        
         
         return result
 
     def _set(self, value):
         self._value = self.normalize(value)
+
         self._datalist = list()
         for data in self._value:
             self._datalist.append(
@@ -120,9 +124,10 @@ class ListField(MetaFieldClass):
                     default=data
                 )
             )
+        
 
-    # def _get(self):
-    #     return [data._get() for data in self._value]
+    def _get(self):
+        return [data._get() for data in self._datalist]
 
     def as_metadata(self):
         return {
@@ -165,8 +170,8 @@ class Fieldset(MetaFieldClass):
 
     def _set(self, value):
         self._value = self.normalize(value)
-        for key, val in self._value:
-            getattr(f'@{key}')._set(val)
+        for key, val in self._value.items():
+            getattr(self, f'@{key}')._set(val)
             
     def _get(self):
         return self
