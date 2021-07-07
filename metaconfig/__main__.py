@@ -10,16 +10,24 @@ class HostPort(Fieldset):
 class ABSum(Fieldset):
     a:int = IntField(label='Значение А', default=1)
     b:int = IntField(label='Значение Б', default=2)
-    hosts = ListField(HostPort(label='Кассовый сервер'), default=[{'host': '192.168.1.100', 'port':15151}], label='Кассовые сервера')
+    hosts = ListField(
+                HostPort(label='Кассовый сервер'), 
+                default=[{'host': '192.168.1.100', 'port':15151}], 
+                label='Кассовые сервера'
+        )
 
 
 class Config(ConfigRoot):
     sums = ABSum(label= 'Some A and B')
-    values = ListField(IntField(label="Some integer", default=0), default=[3 , 5, '11'], label='Список чисел') 
+    values = ListField(
+                IntField(label="Some integer", default=0), 
+                default=[3 , 5, '11'], 
+                label='Список чисел'
+            ) 
 
 config = Config()
 
-print(json.dumps(config.as_metadata(), indent=2))
+print(json.dumps(config.as_metadata(), indent=2,ensure_ascii=False))
 
 for val in config.values:
     print(val)
