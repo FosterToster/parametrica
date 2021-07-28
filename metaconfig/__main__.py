@@ -27,12 +27,6 @@ class Config(ConfigRoot):
 
 config = Config()
 
-print(json.dumps(config.as_metadata(), indent=2,ensure_ascii=False))
+print(config.as_dataset())
+print(json.dumps(config.as_dataset(), indent=2,ensure_ascii=False))
 
-for val in config.values:
-    print(val)
-
-print(config.sums.hosts[0].host)
-
-print(config.sums.a)
-print(config.sums.b)

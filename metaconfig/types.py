@@ -135,6 +135,9 @@ class ListField(MetaFieldClass):
             'member_type': self._member_type.as_metadata()
         }
 
+    def as_dataset(self):
+        return [item.as_dataset() for item in self._datalist]
+
 
 class Fieldset(MetaFieldClass):
     def __init__(self, *, label, default={}, hint=''):
@@ -194,6 +197,10 @@ class Fieldset(MetaFieldClass):
             **dict((f'@{member_name}', getattr(self, f'@{member_name}').as_metadata()) for member_name in self.__metafields)
         }
 
+    def as_dataset(self):
+        return dict((key, getattr(self, f'@{key}').as_dataset()) for key in self.__metafields)
+
+
         
 class ConfigRoot(Fieldset):
     def __init__(self):
@@ -211,6 +218,8 @@ class ConfigRoot(Fieldset):
                 result[metafield] = getattr(class_, metafield).as_metadata()
         
         return result
+
+
 
 
     
