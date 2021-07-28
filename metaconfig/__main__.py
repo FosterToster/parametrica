@@ -26,6 +26,7 @@ class Config(ConfigRoot):
             ) 
 
 config = Config()
+config.update({"sums":{"hosts":[{"port": "6066"}]}, "values": [2]})
 
 print(id(config))
 print(id(Config()))

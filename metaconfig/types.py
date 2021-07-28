@@ -5,6 +5,7 @@ class MetaFieldClass:
         self._label = label
         self._default = self.normalize(default)
         self._hint = hint
+        self._value = None
         self._set(self._default)
         # self._value = self._default
 
@@ -166,9 +167,9 @@ class Fieldset(MetaFieldClass):
         for metafield_name in self.__metafields:
             metafield = getattr(self, f'@{metafield_name}')
             try:
-                dataset[metafield_name] = metafield.normalize(value.get(metafield_name))
+                dataset[metafield_name] = metafield.normalize(value.get(metafield_name, metafield._value))
             except ValueError as e:
-                e.args = (f'{self.__class__.__name__}.{metafield_name}: '+str(e))
+                e.args = (f'{self.__class__.__name__}.{metafield_name}: '+str(e),)
                 raise e
 
         return dataset
@@ -186,7 +187,7 @@ class Fieldset(MetaFieldClass):
             return super().__getattribute__(name[1:])
 
         content = super().__getattribute__(name)
-        
+
         if name.startswith('_'):
             return content
 
