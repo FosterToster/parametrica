@@ -1,3 +1,5 @@
+from .io import JsonFileConfigIO
+
 class MetaFieldClass:
     def __init__(self, *, label, default, hint=''):
         self._label = label
@@ -182,7 +184,9 @@ class Fieldset(MetaFieldClass):
     def __getattribute__(self, name: str):
         if name.startswith('@'):
             return super().__getattribute__(name[1:])
+
         content = super().__getattribute__(name)
+        
         if name.startswith('_'):
             return content
 
@@ -203,8 +207,17 @@ class Fieldset(MetaFieldClass):
 
         
 class ConfigRoot(Fieldset):
+
     def __init__(self):
+        ...
+
+    def _initialize(self):
+        if not hasattr(self, '__io_class__'):
+            self.__io_class__ = JsonFileConfigIO('settings.json')
+
         super().__init__(label='', hint='')
+
+        self._load_config()
 
     @classmethod
     def as_metadata(class_):
@@ -218,6 +231,22 @@ class ConfigRoot(Fieldset):
                 result[metafield] = getattr(class_, metafield).as_metadata()
         
         return result
+
+    def _load_config(self):
+        try:
+            self._set(self.__io_class__.read())
+        except FileNotFoundError:
+            self.update({})
+
+    def update(self, dataset: dict):
+        self.__io_class__.write(self.normalize(dataset))
+
+    def __new__(cls):
+        if not hasattr(cls, '_instance'):
+            cls._instance = super().__new__(cls)
+            cls._instance._initialize()
+        
+        return cls._instance
 
 
 

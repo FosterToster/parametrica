@@ -27,6 +27,10 @@ class Config(ConfigRoot):
 
 config = Config()
 
-print(config.as_dataset())
-print(json.dumps(config.as_dataset(), indent=2,ensure_ascii=False))
+print(id(config))
+print(id(Config()))
+print(id(Config()))
+
+# print(config.as_dataset())
+# print(json.dumps(config.as_dataset(), indent=2,ensure_ascii=False))
 
