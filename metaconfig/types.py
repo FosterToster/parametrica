@@ -67,9 +67,7 @@ class FloatField(MetaFieldClass):
 
 class BoolField(MetaFieldClass):
     def normalize(self, value):   
-        if self._value is None:
-            return self._default 
-        elif type(value) is int:
+        if type(value) is int:
             return value != 0
         elif type(value) is str:
             if value.strip().lower() == 'true':
