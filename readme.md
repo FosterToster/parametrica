@@ -5,73 +5,144 @@ Python модуль для удобной работы с конфигураци
 <br>
 ## Пример использования
 
-<span class="colour" style="color: rgb(136, 132, 111);"># Импортируем необходимые классы из модуля</span>
+```
+# Импортируем необходимые классы из модуля
+from metaconfig import IntField, Fieldset, ConfigRoot, ListField, StrField, BoolField, JsonFileConfigIO
 
-<span class="colour" style="color: rgb(249, 38, 114);">from</span><span class="colour" style="color: rgb(248, 248, 242);"> metaconfig </span><span class="colour" style="color: rgb(249, 38, 114);">import</span><span class="colour" style="color: rgb(248, 248, 242);"> IntField, Fieldset, ConfigRoot, ListField, StrField, BoolField, JsonFileConfigIO</span>
 
-<br>
-<span class="colour" style="color: rgb(136, 132, 111);"># Создадим набор полей, содержащий поля хост и порт</span>
-<span class="colour" style="color: rgb(102, 217, 239);">*class*</span><span class="colour" style="color: rgb(248, 248, 242);"> </span><span class="colour" style="color: rgb(166, 226, 46);"><u>HostPort</u></span><span class="colour" style="color: rgb(248, 248, 242);">(</span><span class="colour" style="color: rgb(166, 226, 46);">*<u>Fieldset</u>*</span><span class="colour" style="color: rgb(248, 248, 242);">):</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    </span><span class="colour" style="color: rgb(136, 132, 111);"># Определим поле host как StrField с названием "Хост", подсказкой "IP адрес" и значеним по-умолчанию 0.0.0.0</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    host </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> StrField(</span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">'Хост'</span><span class="colour" style="color: rgb(248, 248, 242);">, </span><span class="colour" style="color: rgb(253, 151, 31);">*default*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">'0.0.0.0'</span><span class="colour" style="color: rgb(248, 248, 242);">, </span><span class="colour" style="color: rgb(253, 151, 31);">*hint*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">"IP адрес"</span><span class="colour" style="color: rgb(248, 248, 242);">)</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    port </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> IntField(</span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">'Порт'</span><span class="colour" style="color: rgb(248, 248, 242);">, </span><span class="colour" style="color: rgb(253, 151, 31);">*default*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(174, 129, 255);">11000</span><span class="colour" style="color: rgb(248, 248, 242);">)</span>
+# Создадим набор полей, содержащий поля хост и порт
+class HostPort(Fieldset):
+    # Определим поле host как StrField с названием "Хост", подсказкой "IP адрес" и значеним по-умолчанию 0.0.0.0
+    host = StrField(label='Хост', default='0.0.0.0', hint="IP адрес")
+    port = IntField(label='Порт', default=11000)
 
-<br>
-<span class="colour" style="color: rgb(136, 132, 111);"># Создадим другой набор полей</span>
-<span class="colour" style="color: rgb(102, 217, 239);">*class*</span><span class="colour" style="color: rgb(248, 248, 242);"> </span><span class="colour" style="color: rgb(166, 226, 46);"><u>Server</u></span><span class="colour" style="color: rgb(248, 248, 242);">(</span><span class="colour" style="color: rgb(166, 226, 46);">*<u>Fieldset</u>*</span><span class="colour" style="color: rgb(248, 248, 242);">):</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    location </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> StrField(</span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">"Местонахождение сервера"</span><span class="colour" style="color: rgb(248, 248, 242);">, </span><span class="colour" style="color: rgb(253, 151, 31);">*default*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">''</span><span class="colour" style="color: rgb(248, 248, 242);">, </span><span class="colour" style="color: rgb(253, 151, 31);">*hint*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">"Страна"</span><span class="colour" style="color: rgb(248, 248, 242);">)</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    </span><span class="colour" style="color: rgb(136, 132, 111);"># Используем определенный ранее набор полей с дополнительным пояснением</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    connection\_data </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> HostPort(</span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">'Данные для подключения'</span><span class="colour" style="color: rgb(248, 248, 242);">)</span>
 
-<br>
-<span class="colour" style="color: rgb(136, 132, 111);"># Создадим корневой узел конфигурации </span>
-<span class="colour" style="color: rgb(102, 217, 239);">*class*</span><span class="colour" style="color: rgb(248, 248, 242);"> </span><span class="colour" style="color: rgb(166, 226, 46);"><u>Config</u></span><span class="colour" style="color: rgb(248, 248, 242);">(</span><span class="colour" style="color: rgb(166, 226, 46);">*<u>ConfigRoot</u>*</span><span class="colour" style="color: rgb(248, 248, 242);">):</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    \_\_io\_class\_\_ </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> JsonFileConfigIO(</span><span class="colour" style="color: rgb(230, 219, 116);">'proxy.settings'</span><span class="colour" style="color: rgb(248, 248, 242);">)</span>
+# Создадим другой набор полей
+class Server(Fieldset):
+    location = StrField(label="Местонахождение сервера", default='', hint="Страна")
+    # Используем определенный ранее набор полей с дополнительным пояснением
+    connection_data = HostPort(label='Данные для подключения')
 
-<span class="colour" style="color: rgb(248, 248, 242);">    </span><span class="colour" style="color: rgb(136, 132, 111);"># Объявим список серверов</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    proxy\_pool </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> ListField(</span>
-<span class="colour" style="color: rgb(248, 248, 242);">            Server(</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                </span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">"Прокси-сервер"</span><span class="colour" style="color: rgb(248, 248, 242);">, </span>
-<span class="colour" style="color: rgb(248, 248, 242);">                </span><span class="colour" style="color: rgb(253, 151, 31);">*default*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);">{</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                    </span><span class="colour" style="color: rgb(230, 219, 116);">'location'</span><span class="colour" style="color: rgb(248, 248, 242);">: </span><span class="colour" style="color: rgb(230, 219, 116);">'USA'</span><span class="colour" style="color: rgb(248, 248, 242);">,</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                    </span><span class="colour" style="color: rgb(230, 219, 116);">'connection\_data'</span><span class="colour" style="color: rgb(248, 248, 242);">: {</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                        </span><span class="colour" style="color: rgb(230, 219, 116);">'host'</span><span class="colour" style="color: rgb(248, 248, 242);">: </span><span class="colour" style="color: rgb(230, 219, 116);">'proxy.google.com'</span><span class="colour" style="color: rgb(248, 248, 242);">,</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                        </span><span class="colour" style="color: rgb(230, 219, 116);">'port'</span><span class="colour" style="color: rgb(248, 248, 242);">: </span><span class="colour" style="color: rgb(230, 219, 116);">'3128'</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                    }</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                }</span>
-<span class="colour" style="color: rgb(248, 248, 242);">            ),</span>
-<span class="colour" style="color: rgb(248, 248, 242);">            </span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">'Пул прокси-серверов'</span><span class="colour" style="color: rgb(248, 248, 242);">,</span>
-<span class="colour" style="color: rgb(248, 248, 242);">            </span><span class="colour" style="color: rgb(253, 151, 31);">*default*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);">[]</span>
-<span class="colour" style="color: rgb(248, 248, 242);">        )</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    </span>
-<span class="colour" style="color: rgb(248, 248, 242);">    </span><span class="colour" style="color: rgb(136, 132, 111);"># и адрес собственного сервера</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    home </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> Server(</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                </span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">'Домашний сервер'</span><span class="colour" style="color: rgb(248, 248, 242);">, </span>
-<span class="colour" style="color: rgb(248, 248, 242);">                </span><span class="colour" style="color: rgb(253, 151, 31);">*default*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);">{</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                    </span><span class="colour" style="color: rgb(230, 219, 116);">'location'</span><span class="colour" style="color: rgb(248, 248, 242);">: </span><span class="colour" style="color: rgb(230, 219, 116);">'Russia'</span><span class="colour" style="color: rgb(248, 248, 242);">, </span>
-<span class="colour" style="color: rgb(248, 248, 242);">                    </span><span class="colour" style="color: rgb(230, 219, 116);">'connection\_data'</span><span class="colour" style="color: rgb(248, 248, 242);">: {</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                        </span><span class="colour" style="color: rgb(230, 219, 116);">'host'</span><span class="colour" style="color: rgb(248, 248, 242);">: </span><span class="colour" style="color: rgb(230, 219, 116);">'home.server.com'</span><span class="colour" style="color: rgb(248, 248, 242);">, </span>
-<span class="colour" style="color: rgb(248, 248, 242);">                        </span><span class="colour" style="color: rgb(230, 219, 116);">'port'</span><span class="colour" style="color: rgb(248, 248, 242);">: </span><span class="colour" style="color: rgb(174, 129, 255);">4123</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                    }</span>
-<span class="colour" style="color: rgb(248, 248, 242);">                }</span>
-<span class="colour" style="color: rgb(248, 248, 242);">            )</span>
 
-<span class="colour" style="color: rgb(248, 248, 242);">    </span><span class="colour" style="color: rgb(136, 132, 111);"># а так же параметр, разрешающий отключить использование прокси</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    use\_proxy </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> BoolField(</span><span class="colour" style="color: rgb(253, 151, 31);">*label*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(230, 219, 116);">'Использовать прокси'</span><span class="colour" style="color: rgb(248, 248, 242);">, </span><span class="colour" style="color: rgb(253, 151, 31);">*default*</span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(174, 129, 255);">True</span><span class="colour" style="color: rgb(248, 248, 242);">)</span>
-<span class="colour" style="color: rgb(248, 248, 242);">    </span>
+# Создадим корневой узел конфигурации 
+class Config(ConfigRoot):
+    __io_class__ = JsonFileConfigIO('proxy.settings')
 
-<span class="colour" style="color: rgb(136, 132, 111);"># Проинициализируем получившуюся конфигурацию</span>
-<span class="colour" style="color: rgb(248, 248, 242);">config </span><span class="colour" style="color: rgb(249, 38, 114);">=</span><span class="colour" style="color: rgb(248, 248, 242);"> Config()</span>
+    # Объявим список серверов
+    proxy_pool = ListField(
+            Server(
+                label="Прокси-сервер", 
+                default={
+                    'location': 'USA',
+                    'connection_data': {
+                        'host': 'proxy.google.com',
+                        'port': '3128'
+                    }
+                }
+            ),
+            label='Пул прокси-серверов',
+            default=[]
+        )
+    
+    # и адрес собственного сервера
+    home = Server(
+                label='Домашний сервер', 
+                default={
+                    'location': 'Russia', 
+                    'connection_data': {
+                        'host': 'home.server.com', 
+                        'port': 4123
+                    }
+                }
+            )
 
-<span class="colour" style="color: rgb(136, 132, 111);"># Получим из нее конкретное значение (автокомплиты нам помогут)</span>
-<span class="colour" style="color: rgb(102, 217, 239);">print</span><span class="colour" style="color: rgb(248, 248, 242);">(config.home.location)</span>
-<span class="colour" style="color: rgb(136, 132, 111);"># Получим все данные из конфигурации</span>
-<span class="colour" style="color: rgb(102, 217, 239);">print</span><span class="colour" style="color: rgb(248, 248, 242);">(config.as\_dataset())</span>
-<span class="colour" style="color: rgb(136, 132, 111);"># Получим метаданные о конфигурации</span>
-<span class="colour" style="color: rgb(102, 217, 239);">print</span><span class="colour" style="color: rgb(248, 248, 242);">(config.as\_metadata())</span>
-<span class="colour" style="color: rgb(136, 132, 111);"># Точечно обновим один из параметров</span>
-<span class="colour" style="color: rgb(248, 248, 242);">config.update({</span><span class="colour" style="color: rgb(230, 219, 116);">'use\_proxy'</span><span class="colour" style="color: rgb(248, 248, 242);">: </span><span class="colour" style="color: rgb(174, 129, 255);">False</span><span class="colour" style="color: rgb(248, 248, 242);">})</span>
-<br>
+    # а так же параметр, разрешающий отключить использование прокси
+    use_proxy = BoolField(label='Использовать прокси', default=True)
+    
+
+# Проинициализируем получившуюся конфигурацию
+config = Config()
+
+# Получим из нее конкретное значение (автокомплиты нам помогут)
+print(config.home.location)
+# Получим все данные из конфигурации
+print(config.as_dataset())
+# Получим метаданные о конфигурации
+print(config.as_metadata())
+# Точечно обновим один из параметров
+config.update({'use_proxy': False})
+
+
+# print(config.as_dataset())
+# print(json.dumps(config.as_dataset(), indent=2,ensure_ascii=False))
+
+# Импортируем необходимые классы из модуля
+from metaconfig import IntField, Fieldset, ConfigRoot, ListField, StrField, BoolField, JsonFileConfigIO
+
+
+# Создадим набор полей, содержащий поля хост и порт
+class HostPort(Fieldset):
+    # Определим поле host как StrField с названием "Хост", подсказкой "IP адрес" и значеним по-умолчанию 0.0.0.0
+    host = StrField(label='Хост', default='0.0.0.0', hint="IP адрес")
+    port = IntField(label='Порт', default=11000)
+
+
+# Создадим другой набор полей
+class Server(Fieldset):
+    location = StrField(label="Местонахождение сервера", default='', hint="Страна")
+    # Используем определенный ранее набор полей с дополнительным пояснением
+    connection_data = HostPort(label='Данные для подключения')
+
+
+# Создадим корневой узел конфигурации 
+class Config(ConfigRoot):
+    __io_class__ = JsonFileConfigIO('proxy.settings')
+
+    # Объявим список серверов
+    proxy_pool = ListField(
+            Server(
+                label="Прокси-сервер", 
+                default={
+                    'location': 'USA',
+                    'connection_data': {
+                        'host': 'proxy.google.com',
+                        'port': '3128'
+                    }
+                }
+            ),
+            label='Пул прокси-серверов',
+            default=[]
+        )
+    
+    # и адрес собственного сервера
+    home = Server(
+                label='Домашний сервер', 
+                default={
+                    'location': 'Russia', 
+                    'connection_data': {
+                        'host': 'home.server.com', 
+                        'port': 4123
+                    }
+                }
+            )
+
+    # а так же параметр, разрешающий отключить использование прокси
+    use_proxy = BoolField(label='Использовать прокси', default=True)
+    
+
+# Проинициализируем получившуюся конфигурацию
+config = Config()
+
+# Получим из нее конкретное значение (автокомплиты нам помогут)
+print(config.home.location)
+# Получим все данные из конфигурации
+print(config.as_dataset())
+# Получим метаданные о конфигурации
+print(config.as_metadata())
+# Точечно обновим один из параметров
+config.update({'use_proxy': False})
+
+```
 ## Сущности
 
 ### Поле
