@@ -1,5 +1,5 @@
 # Импортируем необходимые классы из модуля
-from metaconfig import IntField, Fieldset, ConfigRoot, ListField, StrField, BoolField, JsonFileConfigIO
+from metaconfig import IntField, Fieldset, ConfigRoot, ListField, StrField, BoolField, JsonFileConfigIO, YAMLFileConfigIO
 
 
 # Создадим набор полей, содержащий поля хост и порт
@@ -18,7 +18,11 @@ class Server(Fieldset):
 
 # Создадим корневой узел конфигурации 
 class Config(ConfigRoot):
+    # В корневом узле необходимо задать класс для чтения/записи конфигруации
+    # Хранить конфигурацию будем в JSON файле с именем "proxy.settings"
     __io_class__ = JsonFileConfigIO('proxy.settings')
+    # Но будем понмнить, что есть возможность хранить конфигурацию еще и в YAML файле:
+    # __io_class__ = YAMLFileConfigIO('proxy.yaml')
 
     # Объявим список серверов
     proxy_pool = ListField(
