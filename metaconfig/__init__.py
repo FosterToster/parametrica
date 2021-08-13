@@ -1,2 +1,2 @@
-from .types import IntField, Fieldset, ListField, ConfigRoot, StrField, BoolField
+from .types import IntField, Fieldset, ListField, ConfigRoot, StrField, BoolField, FloatField
 from .io import JsonFileConfigIO
