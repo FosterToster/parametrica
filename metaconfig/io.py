@@ -40,6 +40,21 @@ class FileConfigIOInterface(ConfigIOInterface):
             f.write(self.serialize(dataset))
             f.close()
 
+class VirtualFile(FileConfigIOInterface):
+
+    '''For virtual configuration like dev.env or sth'''
+
+    def read(self) -> dict:
+        try:
+            return super().read()
+        except FileNotFoundError as e:
+            # Ok. We don`t care.
+            return {}
+        
+    def write(self, dataset: dict):
+        # we need nothing to be written
+        pass
+
 
 class JsonFileConfigIO(FileConfigIOInterface):
     
@@ -48,6 +63,10 @@ class JsonFileConfigIO(FileConfigIOInterface):
 
     def parse(self, data: str) -> dict:
         return json.loads(data)
+
+
+class VirtualJsonFileConfigIO(JsonFileConfigIO, VirtualFile):
+    pass
 
 
 class YAMLFileConfigIO(FileConfigIOInterface):
@@ -64,3 +83,7 @@ class YAMLFileConfigIO(FileConfigIOInterface):
 
     def parse(self, data: str) -> dict:
         return self.yaml.load(data)
+
+
+class VirtualYAMLFileConfigIO(YAMLFileConfigIO):
+    pass
