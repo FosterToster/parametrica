@@ -21,12 +21,12 @@ class ConfigIOInterface(ABC):
     @abstractmethod
     def parse(self, data: str) -> dict:
         ...
-        
 
-class JsonFileConfigIO(ConfigIOInterface):
+
+class FileConfigIOInterface(ConfigIOInterface):
+    
     def __init__(self, filename: str) -> None:
         self.__filename = filename
-        
 
     def read(self) -> dict:
         with open(self.__filename, 'r') as f:
@@ -34,19 +34,17 @@ class JsonFileConfigIO(ConfigIOInterface):
             f.close()
         
         return self.parse(data)
-
+        
     def write(self, dataset: dict):
         with open(self.__filename, 'w+') as f:
             f.write(self.serialize(dataset))
             f.close()
 
+
+class JsonFileConfigIO(FileConfigIOInterface):
+    
     def serialize(self, dataset: dict) -> str:
         return json.dumps(dataset, indent=2, ensure_ascii=False)
 
     def parse(self, data: str) -> dict:
         return json.loads(data)
-
-        
-
-
-
