@@ -146,8 +146,11 @@ class Fieldset(MetaFieldClass):
         for field in dir(self):
             if field.startswith('_'):
                 continue
-            if issubclass(type(getattr(self, f'@{field}')), MetaFieldClass):
+
+            metafield = getattr(self, f'@{field}')
+            if issubclass(type(metafield), MetaFieldClass):
                 self.__metafields.append(field)
+                setattr(self, field, type(metafield)(label=metafield._label, default=metafield._default, hint=metafield._hint))
         
         super().__init__(label=label, default=default, hint=hint)
 
