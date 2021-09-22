@@ -28,6 +28,10 @@ class FileConfigIOInterface(ConfigIOInterface):
     def __init__(self, filename: str) -> None:
         self.__filename = filename
 
+    @property
+    def filename(self):
+        return self.__filename
+
     def read(self) -> dict:
         with open(self.__filename, 'r') as f:
             data = f.read()
