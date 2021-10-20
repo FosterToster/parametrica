@@ -241,7 +241,9 @@ class ConfigRoot(Fieldset):
             self.update({})
 
     def update(self, dataset: dict):
+        self._set(dataset)
         self.__io_class__.write(self.normalize(dataset))
+        
 
     def __new__(cls):
         if not hasattr(cls, '_instance'):
