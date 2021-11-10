@@ -150,7 +150,10 @@ class Fieldset(MetaFieldClass):
             metafield = getattr(self, f'@{field}')
             if issubclass(type(metafield), MetaFieldClass):
                 self.__metafields.append(field)
-                setattr(self, field, type(metafield)(label=metafield._label, default=metafield._default, hint=metafield._hint))
+                if isinstance(metafield, ListField):
+                    setattr(self, field, type(metafield)(metafield._member_type, label=metafield._label, default=metafield._default, hint=metafield._hint))    
+                else:
+                    setattr(self, field, type(metafield)(label=metafield._label, default=metafield._default, hint=metafield._hint))
         
         super().__init__(label=label, default=default, hint=hint)
 
