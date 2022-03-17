@@ -1,12 +1,17 @@
 from .io import JsonFileConfigIO
 
 class MetaFieldClass:
+
+    creation_counter = 0
+
     def __init__(self, *, label, default, hint=''):
         self._label = label
         self._default = self.normalize(default)
         self._hint = hint
         self._value = None
         self._set(self._default)
+        self.creation_counter = MetaFieldClass.creation_counter
+        MetaFieldClass.creation_counter += 1
         # self._value = self._default
 
     def validate(self, value):
@@ -143,22 +148,20 @@ class ListField(MetaFieldClass):
 class Fieldset(MetaFieldClass):
     def __init__(self, *, label, default={}, hint=''):
         self.__metafields = list()
-        for field in dir(self):
-            if field.startswith('_'):
-                continue
 
-            metafield = getattr(self, f'@{field}')
+        metafields = { name: getattr(self, f'@{name}') for name in dir(self) if not name.startswith('_')}
+        for name, metafield in sorted(metafields.items(), key=lambda f: getattr(f[1], "creation_counter", 0)):
             if issubclass(type(metafield), MetaFieldClass):
-                self.__metafields.append(field)
+                self.__metafields.append(name)
                 if isinstance(metafield, ListField):
-                    setattr(self, field, type(metafield)(metafield._member_type, label=metafield._label, default=metafield._default, hint=metafield._hint))    
+                    setattr(self, name, type(metafield)(metafield._member_type, label=metafield._label, default=metafield._default, hint=metafield._hint))    
                 else:
-                    setattr(self, field, type(metafield)(label=metafield._label, default=metafield._default, hint=metafield._hint))
+                    setattr(self, name, type(metafield)(label=metafield._label, default=metafield._default, hint=metafield._hint))
         
         super().__init__(label=label, default=default, hint=hint)
 
     def validate(self, value:dict):
-        if not type(value) is dict:
+        if not isinstance(value, dict):
             raise ValueError(f'Value of type {type(value)} is not compatible with Fieldset')
 
     def normalize(self, value:dict):
@@ -168,12 +171,12 @@ class Fieldset(MetaFieldClass):
         self.validate(value)
         dataset = dict()
         
-        for metafield_name in self.__metafields:
-            metafield = getattr(self, f'@{metafield_name}')
+        metafields = { name: getattr(self, f'@{name}') for name in self.__metafields }
+        for name, metafield in sorted(metafields.items(), key=lambda f: getattr(f[1], "creation_counter")):
             try:
-                dataset[metafield_name] = metafield.normalize(value.get(metafield_name, metafield._value))
+                dataset[name] = metafield.normalize(value.get(name, metafield._value))
             except ValueError as e:
-                e.args = (f'{self.__class__.__name__}.{metafield_name}: '+str(e),)
+                e.args = (f'{self.__class__.__name__}.{name}: '+str(e),)
                 raise e
 
         return dataset
