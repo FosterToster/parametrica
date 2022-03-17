@@ -35,14 +35,12 @@ class FileConfigIOInterface(ConfigIOInterface):
     def read(self) -> dict:
         with open(self.__filename, 'r') as f:
             data = f.read()
-            f.close()
         
         return self.parse(data)
         
     def write(self, dataset: dict):
-        with open(self.__filename, 'w+') as f:
+        with open(self.__filename, 'w+', encoding="utf-8") as f:
             f.write(self.serialize(dataset))
-            f.close()
 
 class VirtualFile(FileConfigIOInterface):
 
@@ -63,7 +61,7 @@ class VirtualFile(FileConfigIOInterface):
 class JsonFileConfigIO(FileConfigIOInterface):
     
     def serialize(self, dataset: dict) -> str:
-        return json.dumps(dataset, indent=2, ensure_ascii=False)
+        return json.dumps(dataset, indent=2, ensure_ascii=False).encode("utf-8")
 
     def parse(self, data: str) -> dict:
         return json.loads(data)
