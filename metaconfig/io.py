@@ -81,7 +81,7 @@ class YAMLFileConfigIO(FileConfigIOInterface):
             raise ImportError('Package "pyyaml" need to be installed.') from e
             
     def serialize(self, dataset: dict) -> str:
-        return self.yaml.dump(dataset, Dumper=self.yaml.Dumper, sort_keys=False)
+        return self.yaml.dump(dataset, Dumper=self.yaml.Dumper, sort_keys=False, allow_unicode=True)
 
     def parse(self, data: str) -> dict:
         return self.yaml.load(data, Loader=self.yaml.Loader)
