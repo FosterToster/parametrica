@@ -32,7 +32,7 @@ class MinLen(Rule[list, str]):
             raise ValueError(f'Length can`t be less than {self.value}')
 
 
-class MinLen(Rule[list, str]):
+class MaxLen(Rule[list, str]):
 
     def try_check(self, value):
         if len(value) > self.value:
