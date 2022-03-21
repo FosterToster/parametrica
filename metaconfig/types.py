@@ -18,10 +18,14 @@ class Field(metaclass=MetaField):
     def rules(self):
         return self.__rules__
 
-    def __init__(self, *, label: str, default: Any, hint: str = '') -> None:
-        self.label = label
-        self.default = default
-        self.hint = hint
+    def __init__(self, label: str, hint: str = '') -> None:
+        self.__label__ = label
+        self.__default__ = None
+        self.__hint__ = hint
+
+    def __call__(self, default: Any) -> 'Field':
+        self.__default__ = default
+        return self
 
 
 class MetaFieldSet(type):
@@ -30,34 +34,69 @@ class MetaFieldSet(type):
         if name == 'FieldSet':
             return super().__new__(class_, name, superclasses, dict_)
 
+        class_instance = super().__new__(class_, name, superclasses, dict((k,v) for k,v in dict_.items() if not (isinstance(v, Field) or isinstance(v, FieldSet))))
+
+        metamap: Dict[str, Union[Field, FieldSet]] = dict()
+
         newdict = dict()
-        newdict['__metamap__'] = dict()
+        
         for cls in superclasses:
             if issubclass(cls, FieldSet):
-                newdict['__metamap__'].update(cls.__metamap__)
+                metamap.update(cls.__metamap__)
 
-        for k,v in dict_.items():
-            if isinstance(v, Field):
-                newdict['__metamap__'][f'.{k}'] = v
-            elif isinstance(v, FieldSet):
-                newdict['__metamap__'][f'.{k}'] = v
-                for mk, mv in v.__metamap__.items():
-                    newdict['__metamap__'][f'.{k}{mk}'] = mv
+        for key, field in dict_.items():
+            if isinstance(field, Field):
+                metamap[f'.{key}'] = field
+                
+                if field.__default__ is None:
+                    raise ValueError(f'{name}.{key} default value is not set. Usage: field: str = Field[*rules]("label","hint")(default_value)')
+
+            elif isinstance(field, FieldSet):
+                metamap[f'.{key}'] = field
+                for mk, mv in field.__metamap__.items():
+                    metamap[f'.{key}{mk}'] = mv
+                    
+                    if mv.__default__ is None:
+                        raise ValueError(f'{name}.{key} default value is not set. Usage: field: str = Field[*rules]("label","hint")(default_value)')
+
             else:
-                newdict[k] = v
+                newdict[key] = field
 
-        return super().__new__(class_, name, superclasses, newdict)
+        class_instance.__metamap__ = metamap
+
+        return class_instance
 
 
 
 class FieldSet(metaclass=MetaFieldSet):
     __metamap__ = dict()
     
-    def __init__(self, *, label: str, hint: str = '') -> None:
-        self.label = label
-        self.defaults = None
-        self.hint = hint
+    def __init__(self, label: str, hint: str = '') -> None:
+        self.__label__ = label
+        self.__defaults__ = dict()
+        self.__hint__ = hint
+
+    def __default__(self, path:str):
+        if path == '.':
+            raise AttributeError(f'{self.__class__.__name__} can`t be used as default value')
+
+        val = self.__defaults__.get(path) # try to get local default value
+        if val is not None:
+            return val
+
+        # or get it from nested fields
+        name, path_last =(*(path.split('.', 2)), '')[1:3]
+        meta = self.__metamap__.get(f'.{name}')
+
+        if isinstance(meta, FieldSet):
+            return meta.__default__(f'.{path_last}')
+        elif isinstance(meta, Field):
+            if path_last:
+                raise AttributeError(f'{self.__class__.__name__}.{name} does not have default value for "{path_last}"')
+            return meta.__default__
+        else:
+            raise AttributeError(f'{self.__class__.__name__} does not have valid default value for {name}')
 
     def __call__(self, **defaults: Any):
-        self.defaults = defaults
+        self.__defaults__ = dict((f'.{k}',v) for k,v in defaults.items())
         return self
