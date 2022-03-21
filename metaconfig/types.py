@@ -95,7 +95,7 @@ class FieldSet(metaclass=MetaFieldSet):
                 raise AttributeError(f'{self.__class__.__name__}.{name} does not have default value for "{path_last}"')
             return meta.__default__
         else:
-            raise AttributeError(f'{self.__class__.__name__} does not have valid default value for {name}')
+            raise AttributeError(f'{self.__class__.__name__} does not have default value for {name}')
 
     def __call__(self, **defaults: Any):
         self.__defaults__ = dict((f'.{k}',v) for k,v in defaults.items())
