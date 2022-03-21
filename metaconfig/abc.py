@@ -4,7 +4,7 @@ class MetaRule(type):
 
     def __getitem__(class_, *restrictions) -> Type['Rule']:
         class _RestrictedRule(Rule):
-            __restrictions__ = tuple(restrictions)
+            __restrictions__ = tuple(*class_.__restrictions__, restrictions)
 
         return _RestrictedRule
 

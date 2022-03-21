@@ -5,7 +5,7 @@ class MetaField(type):
 
     def __getitem__(class_, *rules) -> Type['Field']:
         class _RuledFiled(Field):
-            __rules__ = tuple(rules)
+            __rules__ = tuple(*class_.__rules__, rules)
         
         return _RuledFiled
 
