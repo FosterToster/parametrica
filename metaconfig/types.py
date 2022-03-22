@@ -3,9 +3,12 @@ from typing import Any, Dict, Type, Union
 
 class MetaField(type):
 
-    def __getitem__(class_, *rules) -> Type['Field']:
+    def __getitem__(class_, rules) -> Type['Field']:
+        if not isinstance(rules, tuple):
+            rules = (rules,)
+        
         class _RuledFiled(Field):
-            __rules__ = tuple(*class_.__rules__, rules)
+            __rules__ = (*class_.__rules__, *rules)
         
         return _RuledFiled
 

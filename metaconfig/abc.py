@@ -2,9 +2,12 @@ from typing import Any, Type
        
 class MetaRule(type):
 
-    def __getitem__(class_, *restrictions) -> Type['Rule']:
+    def __getitem__(class_, restrictions) -> Type['Rule']:
+        if not isinstance(restrictions, tuple):
+            restrictions = (restrictions,)
+            
         class _RestrictedRule(Rule):
-            __restrictions__ = tuple(*class_.__restrictions__, restrictions)
+            __restrictions__ = (*class_.__restrictions__, *restrictions)
 
         return _RestrictedRule
 
