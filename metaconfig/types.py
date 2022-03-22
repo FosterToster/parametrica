@@ -1,4 +1,8 @@
-from typing import Any, Dict, Type, Union
+from distutils.log import error
+from typing import Any, Dict, Tuple, Type, Union
+
+from metaconfig.abc import Rule
+from .io import JsonFileConfigIO, ConfigIOInterface
 
 
 class MetaField(type):
@@ -18,7 +22,7 @@ class Field(metaclass=MetaField):
     __rules__ = tuple()
     
     @property
-    def rules(self):
+    def rules(self) -> Tuple[Rule]:
         return self.__rules__
 
     def __init__(self, label: str, hint: str = '') -> None:
@@ -26,8 +30,14 @@ class Field(metaclass=MetaField):
         self.__default__ = None
         self.__hint__ = hint
 
+    def __validate__(self, value: Any):
+        for rule in self.rules:
+            value = rule(value)        
+
+        return value
+
     def __call__(self, default: Any) -> 'Field':
-        self.__default__ = default
+        self.__default__ = self.__validate__(default)
         return self
 
 
@@ -72,7 +82,7 @@ class MetaFieldSet(type):
 
 
 class FieldSet(metaclass=MetaFieldSet):
-    __metamap__ = dict()
+    __metamap__: Dict[str, Field] = dict()
     
     def __init__(self, label: str, hint: str = '') -> None:
         self.__label__ = label
@@ -83,9 +93,10 @@ class FieldSet(metaclass=MetaFieldSet):
         if path == '.':
             raise AttributeError(f'{self.__class__.__name__} can`t be used as default value')
 
-        val = self.__defaults__.get(path) # try to get local default value
-        if val is not None:
-            return val
+        if hasattr(self, '__defaults__'):
+            val = self.__defaults__.get(path) # try to get local default value
+            if val is not None:
+                return val
 
         # or get it from nested fields
         name, path_last =(*(path.split('.', 2)), '')[1:3]
@@ -102,6 +113,8 @@ class FieldSet(metaclass=MetaFieldSet):
 
     def __call__(self, **defaults: Any):
         self.__defaults__ = dict((f'.{k}',v) for k,v in defaults.items())
+        for path, value in self.__defaults__.items():
+            value = self.__metamap__[path].__validate__(value)
         return self
 
 
