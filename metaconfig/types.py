@@ -103,3 +103,62 @@ class FieldSet(metaclass=MetaFieldSet):
     def __call__(self, **defaults: Any):
         self.__defaults__ = dict((f'.{k}',v) for k,v in defaults.items())
         return self
+
+
+class Metaconfig(FieldSet):
+    def __init__(self, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')) -> None:
+        self.__io_class__ = io_class
+        pathset = self.__parsepathes__(self.__readstorage__(), '')
+        self.__values__ = self.__validate_pathset__(pathset)
+        self.__writestorage__(self.__serializepathes__(self.__values__))
+
+    def __serializepathes__(self, pathset:Dict[str, Any]) -> dict:
+        result = dict()
+        for path, value in pathset.items():
+            path_items = path.split('.')[1:]
+            root_name = path_items.pop(0)
+            result[root_name] = obj = result.get(root_name) or dict()
+
+            if len(path_items) == 0:
+                result[root_name] = value
+                continue
+            
+            while len(path_items) > 1:
+                key = path_items.pop(0)
+                obj[key] = obj = obj.get(key) or dict()
+            else:
+                obj[path_items.pop(0)] = value
+
+        return result
+            
+    def __validate_pathset__(self, pathset: dict):
+        errors = dict()
+        for path, value in pathset.items():
+            try:
+                value = self.__metamap__[path].__validate__(value)
+            except ValueError as e:
+                errors[path[1:]] = e
+        if len(errors) == 0:
+            return pathset
+        else:
+            raise ValueError('There is some configuration errors:\n'+'\n'.join([f'{path}: {e}' for path, e in errors.items()]))
+    
+    def __readstorage__(self) -> dict:
+        try:
+            return self.__io_class__.read()
+        except FileNotFoundError:
+            return self.__serializepathes__(dict((k, self.__default__(k)) for k,v in self.__metamap__.items() if isinstance(v, Field)))
+
+    def __writestorage__(self, dataset: dict):
+        return self.__io_class__.write(dataset)
+
+    def __parsepathes__(self, dataset: dict, prefix: str) -> dict:
+        result = dict()
+
+        for k,v in dataset.items():
+            if isinstance(v, dict):
+                result.update(self.__parsepathes__(v, prefix + '.' + k))
+            else:
+                result[prefix + '.' + k] = v
+
+        return result
