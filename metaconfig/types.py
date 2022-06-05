@@ -1,5 +1,5 @@
 from typing import Any, Dict, Type, Union, Callable, Iterable
-from .abc import ABCField, ABCRule, ABCFieldset, ABCSet, T
+from .abc import ABCField, ABCRule, ABCFieldset, ABCSet, ABCMetaconfig, T
 
 class Field(ABCField[T]):
 
@@ -55,4 +55,7 @@ class Fieldset(ABCFieldset):
     ...
 
 class Set(ABCSet, Field):
+    ...
+
+class Metaconfig(ABCMetaconfig):
     ...

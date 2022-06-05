@@ -1,7 +1,4 @@
-from inspect import isclass
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, TypeVar, Generic, Union
-import typing
-from functools import lru_cache
 
 T = TypeVar('T')
        
@@ -64,12 +61,16 @@ class ABCField(Generic[T]):
 
         self.get_default()
 
-    def __try_find_value__(self) -> T:
-        raise ValueError('Not Found')
+    def __try_find_value__(self, parent: 'ABCFieldset') -> T:
+        if issubclass(self.__type__, ABCFieldset):
+            class _DataProxy(self.__type__):
+                __data__ = parent.__data__.get(self.__name__)
+
+            return  _DataProxy()
 
     def __get__(self, instance, class_) -> T:
         try:
-            return self.__try_find_value__()
+            return self.__try_find_value__(instance)
         except ValueError:
             return self.get_default()
 
@@ -195,7 +196,7 @@ class ABCFieldset(ABCField[dict], metaclass=MetaFieldset):
         return resultset
     
 
-class ABCSet(ABCField[Tuple[T]]):
+class ABCSet(ABCField[T]):
     def __init__(self, default: Union[Iterable[T], Callable[[], Iterable[T]]] = None):
         super().__init__(default or [])
 
@@ -208,6 +209,9 @@ class ABCSet(ABCField[Tuple[T]]):
                 results.append(val)
 
         return results
+
+    def __get__(self, instance, class_) -> Tuple[T]:
+        return super().__get__(instance, class_)
 
     def __normalize_value__(self, dataset: Iterable[Any]) -> Tuple[T]:
         if issubclass(self.__type__, ABCFieldset) or issubclass(self.__type__, ABCSet):
@@ -223,3 +227,24 @@ class ABCSet(ABCField[Tuple[T]]):
 
             return tuple(resultset)
             
+
+class ABCMetaconfig(metaclass=MetaFieldset):
+    def __init__(self, io_class = None):
+        self.__io_class__ = io_class or 1 # TODO
+        self.__default__ = None
+        self.__type__ = None
+        self.__name__ = self.__class__.__name__
+        self.__label__ = ''
+        self.__hint__ = ''
+        self.__rule__: ABCRule = None
+        self.__secret__ = False
+
+    def get_default(self) -> dict:
+        defaults = {}
+        for field_name in self.__metafields__:
+            defaults[field_name] = self.__class__.__dict__[field_name].get_default()
+            if isinstance(defaults[field_name], ABCField):
+                defaults[field_name] = defaults[field_name].get_default()
+        return defaults
+        # return [self.__class__.__dict__[field].get_default() for field in self.__metafields__]
+        # return dict((field_name, self.__class__.__dict__[field_name].get_default()) for field_name in self.__metafields__)

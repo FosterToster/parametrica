@@ -1,6 +1,6 @@
 from email.policy import default
 from metaconfig import Field
-from metaconfig.types import Fieldset, Set
+from metaconfig.types import Fieldset, Set, Metaconfig
 from metaconfig.rules import Max, Min, AND, OR, InRange, ABCRule
 from dataclasses import dataclass
 import json
@@ -27,13 +27,20 @@ class Some(Fieldset):
 # print(callable(Some()))  
 class Else(Fieldset):
     some_else = Field[Some](Some(some=5)).label('Дарова')
-    int_list = Set[int]((1,2,3)).rule(InRange(1,2))
-    some_list = Set[Some]((Some(some=8),))
-    list_some_list = Set[Set[Some]](((Some(some=9),),))
+    int_list = Set[int]((1,2,3)).rule(InRange(1,3))
+    some_list = Set[Some]((Some(some=8), Some(some=10)))
 
+
+class Config(Metaconfig):
+    __data__ = {'do': True, 'some': {'some': 10}, 'else_': {'some_else': {'some': 5}, 'int_list': [1, 2, 3], 'some_list': [{'some': 8}, {'some': 10}]}}
+
+    do = Field[bool](True)
+    some = Field[Some]()
+    else_ = Field[Else]()
+    
 # print(Else().__normalize_value__({'some_else': {'some': "3"}}))
-print(json.dumps(Else().get_default(), indent=2))
-# print(Some().get_default())
+# print(json.dumps(Config().get_default(), indent=2))
+print(Config().get_default())
 # print()
 
 
