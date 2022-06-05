@@ -1,4 +1,5 @@
-from typing import Any, Callable, Type, TypeVar, Generic, Union
+from inspect import isclass
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, TypeVar, Generic, Union
 import typing
 from functools import lru_cache
 
@@ -46,57 +47,67 @@ class ABCRule(metaclass=MetaRule):
 
 class ABCField(Generic[T]):
 
-    def __init__(self, default: Union[T, Callable[[], T]]):
+    def __init__(self, default: Union[T, Callable[[], T]] = None):
+        if default is None: 
+            if issubclass(self.__type__, ABCFieldset):
+                default = self.__type__()
+            else:
+                raise ValueError(f'Field of type {self.__type__} requires default value')
+
         self.__default__ = default
-        # default validation
-        tmp_default = self.get_default()
-        tmp_default = self.__validate_value__(self.__normalize_value__(tmp_default))
-        # default ok
-        self.__field_name__ = ''
+
+        self.__name__ = ''
         self.__label__ = ''
         self.__hint__ = ''
         self.__rule__: ABCRule = None
         self.__secret__ = False
 
+        self.get_default()
+
     def __try_find_value__(self) -> T:
         raise ValueError('Not Found')
 
     def __get__(self, instance, class_) -> T:
-        print(self.__name__, instance, class_)
-
         try:
             return self.__try_find_value__()
         except ValueError:
-            return self.__set_value__(self.get_default())
+            return self.get_default()
 
     def __set__(self, _: T) -> T:
         raise TypeError(f'Field value can not be assigned. Use Metaconfig.update() method instead.')
 
     def __normalize_value__(self, value: Any) -> T:
+        if issubclass(self.__type__, ABCFieldset):
+            if isinstance(value, self.__type__):
+                return value
+            else:
+                return self.__default__.__normalize_value__(value)
+
         if not isinstance(value, self.__type__):
-            return self.__type__(value)
-        else:
-            return value
+            value =  self.__type__(value)
+
+        return self.__validate_value__(value)
 
     def __validate_value__(self, value: T) -> T:
-        #TODO
-        return value
-
-    def __set_value__(self, value: Any) -> T:
-        value = self.__normalize_value__(value)
-        value = self.__validate_value__(value)
-
-        #TODO write storage
-
+        if self.__rule__:
+            self.__rule__(value)
         return value
         
+    def __new_default__(self, value: Union[T, Callable[[], T]]):
+        new_field = self.__clone__()
+        new_field.__default__ = value
+        new_field.get_default()
+        return new_field
 
     def get_default(self) -> T:
         if callable(self.__default__):
-            return self.__default__()
+            value = self.__default__()
         else:
-            return self.__default__
+            value = self.__default__
 
+        return self.__normalize_value__(value)
+
+        
     def __class_getitem__(self, args):
         class _TypedField(self):
             __type__ = args
@@ -105,7 +116,7 @@ class ABCField(Generic[T]):
 
     def __clone__(self):
         new_field = self.__class__(self.__default__)
-        new_field.__field_name__ = self.__field_name__
+        new_field.__name__ = self.__name__
         new_field.__label__ = self.__label__
         new_field.__hint__ = self.__hint__
         new_field.__rule__ = self.__rule__
@@ -114,4 +125,101 @@ class ABCField(Generic[T]):
         return new_field
 
 
+class MetaFieldset(type):
 
+    def __new__(class_, name, bases, dict):
+        metafields = list()
+        for key, value in dict.items():
+            if isinstance(value, ABCField):
+                metafields.append(key)
+                value.__name__ = key
+    
+        fieldset = super().__new__(class_, name, bases, dict)
+        fieldset.__metafields__ = metafields
+        return fieldset
+
+
+class ABCFieldset(ABCField[dict], metaclass=MetaFieldset):
+    
+    def __init__(self, default_keyset: dict = {}, **default_fields: Dict[str, Any]):
+        defaults = {
+            **default_keyset,
+            **default_fields
+        }
+        
+        for key, value in defaults.items():
+            field: ABCField = self.__get_field__(key)
+            self.__set_field__(key, field.__new_default__(value))
+
+    def get_default(self) -> dict:
+        defaults = {}
+        for field_name in self.__metafields__:
+            defaults[field_name] = self.__get_field__(field_name).get_default()
+            if isinstance(defaults[field_name], ABCField):
+                defaults[field_name] = defaults[field_name].get_default()
+        return defaults
+
+    def __set_field__(self, name, field: ABCField):
+        self.__dict__[name] = field
+
+    def __get_field__(self, name: str) -> ABCField:
+        field = self.__dict__.get(name)
+        if field is None:
+            field = self.__class__.__dict__.get(name)
+            if field is None:
+                raise TypeError(f'{self.__class__.name} does not have field named {name}')
+        
+        if not isinstance(field, ABCField):
+            raise TypeError(f'{self.__class__.__name__}\'s field {name} is not instance of Field')
+        else:
+            return field
+
+    def __normalize_value__(self, dataset: dict) -> dict:
+        if isinstance(dataset, self.__class__):
+            return dataset.get_default()
+
+        if not isinstance(dataset, dict):
+            raise ValueError(f'Required <dict> as value for {self.__class__.__name__}')
+        
+        return self.__validate_value__(dataset)
+
+    def __validate_value__(self, dataset: dict) -> dict:
+        resultset = {}
+        for key, value in dataset.items():
+            try:
+                field: ABCField = self.__get_field__(key)
+                resultset[key] = field.__normalize_value__(value)
+            except TypeError:
+                continue
+
+        return resultset
+    
+
+class ABCSet(ABCField[Tuple[T]]):
+    def __init__(self, default: Union[Iterable[T], Callable[[], Iterable[T]]] = None):
+        super().__init__(default or [])
+
+    def get_default(self) -> Tuple[T]:
+        results = list()
+        for val in super().get_default():
+            if isinstance(val, ABCField):
+                results.append(val.get_default())
+            else:
+                results.append(val)
+
+        return results
+
+    def __normalize_value__(self, dataset: Iterable[Any]) -> Tuple[T]:
+        if issubclass(self.__type__, ABCFieldset) or issubclass(self.__type__, ABCSet):
+                obj = self.__type__()
+                return tuple(obj.__normalize_value__(value) for value in dataset)        
+        else:
+            resultset = list()
+            for value in dataset:
+                if not isinstance(value, self.__type__):
+                    value = self.__type__(value)
+                
+                resultset.append(self.__validate_value__(value))
+
+            return tuple(resultset)
+            

@@ -1,6 +1,5 @@
-from typing import Union, Callable, TypeVar, _GenericAlias, Generic
-from dataclasses import dataclass
-from .abc import ABCField, ABCRule, T
+from typing import Any, Dict, Type, Union, Callable, Iterable
+from .abc import ABCField, ABCRule, ABCFieldset, ABCSet, T
 
 class Field(ABCField[T]):
 
@@ -10,6 +9,11 @@ class Field(ABCField[T]):
 
     #     else:
     #         original_value
+    def default(self, value: Union[T, Callable[[], T]]):
+        new_field = self.__clone__()
+        new_field.__default__ = value
+        new_field.get_default()
+        return new_field
 
     def label(self, text: str):
         '''
@@ -43,22 +47,12 @@ class Field(ABCField[T]):
         rule.type_check(self.__type__)
         new_field = self.__clone__()
         new_field.__rule__ = rule
+        new_field.get_default()
         return new_field
 
-    def __set_name__(self, value: str):
-        self.__field_name__ = value
 
-
-class MetaFieldset(type):
-
-    def __new__(class_, name, bases, dict):
-        for key, value in dict.items():
-            if isinstance(value, Field):
-                value.__field__name__ = key
-
-        return super().__new__(class_, name, bases, dict)
-
-@dataclass
-class Fieldset(metaclass=MetaFieldset):
+class Fieldset(ABCFieldset):
     ...
-    
+
+class Set(ABCSet, Field):
+    ...
