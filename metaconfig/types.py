@@ -1,5 +1,6 @@
 from typing import Any, Dict, Type, Union, Callable, Iterable
 from .abc import ABCField, ABCRule, ABCFieldset, ABCMetaconfig, T
+from .io import ConfigIOInterface, JsonFileConfigIO
 
 class Field(ABCField[T]):
 
@@ -47,4 +48,11 @@ class Fieldset(ABCFieldset):
 
 
 class Metaconfig(ABCMetaconfig):
-    ...
+    
+    def __new__(class_, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')):
+        if hasattr(class_, '__instance__'):
+            return class_.__instance__
+
+        class_.__instance__ = super().__new__(class_)
+        class_.__instance__._initialize(io_class)
+        return class_.__instance__
