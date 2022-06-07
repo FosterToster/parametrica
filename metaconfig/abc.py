@@ -1,5 +1,6 @@
 import enum
-from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple, Type, TypeVar, Generic, Union, overload
+from typing import Any, Callable, Dict, Type, TypeVar, Generic, Union, overload
+from .io import ConfigIOInterface
 
 T = TypeVar('T')
        
@@ -43,9 +44,26 @@ class ABCRule(metaclass=MetaRule):
             raise TypeError(f'Field type "{type}" does not compatible with some assigned rules')
 
 
-class FieldsetDataProxy:
-    root_data = None
-    names_path = ''
+class Dataset:
+    def __init__(self, data: dict):
+        self.__data__ = data
+
+    @property
+    def data(self):
+        return self.__data__
+
+    def get_item_by_path(self, path):
+        path = [x.strip() for x in path.split('.') if x.strip()] 
+        node = self.data
+        for name in path:
+            node = node.get(name)
+
+        return node
+
+
+class DataContainer:
+    __dataset__: Dataset = None
+    __nav_path__ = ''
 
 
 class ABCField(Generic[T]):
@@ -93,7 +111,21 @@ class ABCField(Generic[T]):
 
 
     def __try_find_value__(self, parent: 'ABCFieldset') -> T:
-        raise ValueError(f'Type "{parent.__name__}" does not have metafield named "{self.__name__}"')
+        if self.__is_primitive_type__():
+                return parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__)))
+        elif self.__is_iterable_type__():  
+            class _DataproxyIterator(self.__generic_type__()):
+                __dataset__ = parent.__dataset__
+                __nav_path__ = '.'.join((parent.__nav_path__, self.__name__))
+            
+            return _DataproxyIterator()
+        else:
+            class _Dataproxy(self.__generic_type__()):
+                __dataset__ = parent.__dataset__
+                __nav_path__ = '.'.join((parent.__nav_path__, self.__name__))
+            
+            return _Dataproxy()
+        # raise ValueError(f'Type "{parent.__name__}" does not have metafield named "{self.__name__}"')
 
     def __get__(self, instance, class_) -> T:
         try:
@@ -131,13 +163,6 @@ class ABCField(Generic[T]):
 
             return tuple(self.__validate_value__( self.__ensure_type__( item ) ) for item in value)
             
-        # if issubclass(self.__type__, ABCFieldset):
-        #     if isinstance(value, self.__type__):
-        #         return value
-        #     else:
-        #         return self.__default__.__normalize_value__(value)
-        
-
         return self.__validate_value__( self.__ensure_type__( value ) )
 
     def __validate_value__(self, value: T) -> T:
@@ -198,7 +223,7 @@ class MetaFieldset(type):
         return fieldset
 
 
-class ABCFieldset(ABCField[dict], metaclass=MetaFieldset):
+class ABCFieldset(ABCField[dict], DataContainer, metaclass=MetaFieldset):
     
     def __init__(self, **default_fields: Dict[str, Any]):
         for key, value in default_fields.items():
@@ -268,27 +293,8 @@ class ABCFieldset(ABCField[dict], metaclass=MetaFieldset):
         return resultset
     
 
-class ABCMetaconfig(FieldsetDataProxy, metaclass=MetaFieldset):
-    def __init__(self, io_class = None):
-        self.__io_class__ = io_class or 1 # TODO
-        self.__default__ = None
-        self.__type__ = None
+class ABCMetaconfig(DataContainer, metaclass=MetaFieldset):
+    def _initialize(self, io_class: ConfigIOInterface):
         self.__name__ = self.__class__.__name__
-        self.__label__ = ''
-        self.__hint__ = ''
-        self.__rule__: ABCRule = None
-        self.__secret__ = False
-
-    @classmethod
-    def haskey(class_, key: str):
-        return key in class_.__metafields__
-
-    def get_default(self) -> dict:
-        defaults = {}
-        for field_name in self.__metafields__:
-            defaults[field_name] = self.__class__.__dict__[field_name].get_default()
-            if isinstance(defaults[field_name], ABCField):
-                defaults[field_name] = defaults[field_name].get_default()
-        return defaults
-        # return [self.__class__.__dict__[field].get_default() for field in self.__metafields__]
-        # return dict((field_name, self.__class__.__dict__[field_name].get_default()) for field_name in self.__metafields__)
+        self.__io_class__ = io_class
+        
