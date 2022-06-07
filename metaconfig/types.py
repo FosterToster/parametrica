@@ -1,19 +1,10 @@
 from typing import Any, Dict, Type, Union, Callable, Iterable
-from .abc import ABCField, ABCRule, ABCFieldset, ABCSet, ABCMetaconfig, T
+from .abc import ABCField, ABCRule, ABCFieldset, ABCMetaconfig, T
 
 class Field(ABCField[T]):
 
-    # def __getattribute__(self, attr):
-    #     original_value = super().__getattribute__(attr)
-    #     if isinstance(original_value, Field):
-
-    #     else:
-    #         original_value
     def default(self, value: Union[T, Callable[[], T]]):
-        new_field = self.__clone__()
-        new_field.__default__ = value
-        new_field.get_default()
-        return new_field
+        return self.__clone__(value)
 
     def label(self, text: str):
         '''
@@ -44,18 +35,16 @@ class Field(ABCField[T]):
         '''
         Assign validation rule for field
         '''
-        rule.type_check(self.__type__)
+        rule.type_check(self.__generic_type__())
         new_field = self.__clone__()
         new_field.__rule__ = rule
-        new_field.get_default()
+        new_field.__get_default__()
         return new_field
 
 
 class Fieldset(ABCFieldset):
     ...
 
-class Set(ABCSet, Field):
-    ...
 
 class Metaconfig(ABCMetaconfig):
     ...
