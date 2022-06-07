@@ -230,7 +230,7 @@ class ABCFieldset(ABCField[dict], metaclass=MetaFieldset):
                     else:
                         break
             else:
-                raise TypeError(f'{self.__class__.__name__} does not have field named {name}')
+                raise TypeError(f'{class_.__name__} does not have field named {name}')
 
         return field
 
