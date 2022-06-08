@@ -56,13 +56,20 @@ class Dataset:
         path = [x.strip() for x in path.split('.') if x.strip()] 
         node = self.data
         for name in path:
-            node = node.get(name)
+            try:
+                idx = int(name)
+            except ValueError:
+                if name not in node.keys():
+                    raise AttributeError(f'Value by requested path is not found')
+                node = node.get(name)
+            else:
+                node = node[idx]
 
         return node
 
 
 class DataContainer:
-    __dataset__: Dataset = None
+    __dataset__: Dataset = Dataset({})
     __nav_path__ = ''
 
 
@@ -110,13 +117,30 @@ class ABCField(Generic[T]):
         self.__get_default__()
 
 
-    def __try_find_value__(self, parent: 'ABCFieldset') -> T:
+    def __try_find_value__(self, parent: 'ABCFieldset', instance: 'ABCFieldset') -> T:
+        parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__)) )
         if self.__is_primitive_type__():
-                return parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__)))
-        elif self.__is_iterable_type__():  
+                return self.__normalize_value__( parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__))) )
+        elif self.__is_iterable_type__():
+            # parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__)) )
             class _DataproxyIterator(self.__generic_type__()):
                 __dataset__ = parent.__dataset__
                 __nav_path__ = '.'.join((parent.__nav_path__, self.__name__))
+
+
+                def __getitem__(self, idx):
+                    try:
+                        lst = self.__dataset__.get_item_by_path( self.__nav_path__ )
+                        if idx >= len(lst):
+                            raise IndexError('list index out of range')
+                    except AttributeError:
+                        return 
+
+                    class _Dataproxy(self.__class__.__bases__[0]):
+                        __dataset__ = self.__dataset__
+                        __nav_path__ = '.'.join((self.__nav_path__, str(idx)))
+
+                    return _Dataproxy()
             
             return _DataproxyIterator()
         else:
@@ -129,8 +153,8 @@ class ABCField(Generic[T]):
 
     def __get__(self, instance, class_) -> T:
         try:
-            return self.__try_find_value__(class_)
-        except ValueError:
+            return self.__try_find_value__(class_, instance)
+        except AttributeError:
             return self.__get_default__(instance)
 
     def __set__(self, _: T) -> T:
@@ -146,7 +170,9 @@ class ABCField(Generic[T]):
             return self.__type__
 
     def __is_primitive_type__(self) -> bool:
-        return self.__generic_type__() in (int, str, float, bool, enum.Enum)
+        typ = self.__generic_type__()
+        return (typ in (int, str, float, bool)) or (issubclass(typ, enum.Enum))
+        # return self.__generic_type__() in 
 
     def __ensure_type__(self, value: Any) -> T:
         required_type = self.__generic_type__()
@@ -295,6 +321,6 @@ class ABCFieldset(ABCField[dict], DataContainer, metaclass=MetaFieldset):
 
 class ABCMetaconfig(DataContainer, metaclass=MetaFieldset):
     def _initialize(self, io_class: ConfigIOInterface):
-        self.__name__ = self.__class__.__name__
+        self.__name__ = ''
         self.__io_class__ = io_class
-        
+

@@ -48,7 +48,7 @@ class Printer(Fieldset):
 # корень конфига
 class Config(Metaconfig):
     # Обявили поле типа str с дефолтным значением 12 (автоматические приведение типа, на выходе будет str)
-    how_many = Field[str](12)
+    how_many = Field[str](13)
     # Обявили поле типа Server, задали дефолтное значение поля прямо в Field
     local_server = Field[Server](host="192.168.1.100", port=11010)
     # Но можно и так
@@ -65,10 +65,11 @@ class Config(Metaconfig):
 
 print( Config().how_many )
 print( Config().local_server.host )
-print( Config().r_keeper.protocol )
 print( Config().local_server.port )
+print( Config().r_keeper.protocol )
 print( Config().counts )
 print( Config().printers[0].name )
+print( Config().printers[0].port )
 print( Config().data)
 
 
