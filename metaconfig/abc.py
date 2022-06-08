@@ -138,13 +138,13 @@ class ABCField(Generic[T]):
             raise ValueError(f'{self.__name__} -> {e}') from e
         return new_field
 
-    def __export_data__(self, instance: '_FieldRW'):
+    def __export_data__(self, instance: '_FieldRW', *, export_secret: bool = False):
         if self.__is_primitive_type__():
             return self.__get__(instance, instance.__class__)
         elif self.__is_iterable_type__():
-            return tuple(x.__export_data__(instance) for x in self.__get__(instance, instance.__class__))
+            return tuple(x.__export_data__(instance, export_secret=export_secret) for x in self.__get__(instance, instance.__class__))
         else:
-            return self.__get__(instance, instance.__class__).__export_data__(instance)
+            return self.__get__(instance, instance.__class__).__export_data__(instance, export_secret=export_secret)
         
 
     def __try_find_value__(self, from_: 'ABCFieldset' = None) -> T:
@@ -342,8 +342,15 @@ class ABCFieldset(ABCField, _FieldRW, metaclass=MetaFieldset):
         
         return self
 
-    def __export_data__(self, instance: '_FieldRW'):
-        return dict((field_name, self.__get_field__(field_name).__export_data__(self)) for field_name in self.__metafields__)        
+    def __export_data__(self, instance: '_FieldRW', *, export_secret: bool = False):
+        result = {}
+        for field_name in self.__metafields__:
+            field = self.__get_field__(field_name)
+            if not export_secret and field.__secret__:
+                continue
+            result[field_name] = field.__export_data__(self, export_secret=export_secret)
+
+        return result
 
     def __normalize_value__(self, dataset: dict) -> dict:
         if isinstance(dataset, self.__class__):
@@ -378,8 +385,16 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
         self.__io_class__ = io_class
 
 
-    def __dataset__(self) -> dict:
-        return dict((field_name, self.__get_field__(field_name).__export_data__(self)) for field_name in self.__metafields__)
+    def __dataset__(self,*, export_secret: bool = False) -> dict:
+        result = {}
+        for field_name in self.__metafields__:
+            field = self.__get_field__(field_name)
+            if (not export_secret) and field.__secret__:
+                continue
+            result[field_name] = field.__export_data__(self, export_secret=export_secret)
+
+        return result
+        # return dict((field_name, self.__get_field__(field_name).__export_data__(self, export_sercet=export_sercet)) for field_name in self.__metafields__)
 
     def __update__(self, dataset: dict):
         for field_name, value in dataset.items():

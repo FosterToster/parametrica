@@ -104,7 +104,7 @@ config = Config()
 
 # })
 
-print(json.dumps(config.export(), indent=2, ensure_ascii=False))
+print(json.dumps(config.export(export_secret=False), indent=2, ensure_ascii=False))
 
 # print( 'config.how_many ', config.how_many )
 # print( 'config.local_server.host ', config.local_server.host )
