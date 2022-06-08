@@ -57,8 +57,8 @@ class Metaconfig(ABCMetaconfig):
 
     def update(self, dataset: dict):
         self.__update__(dataset)
-        #TODO write IO
-
+        self.__write__()
+        
 
 class MetaconfigSingletone(Metaconfig):
     def __init__(self) -> None:

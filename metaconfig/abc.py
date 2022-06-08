@@ -113,6 +113,8 @@ class ABCField(Generic[T]):
         self.__get_default__()
 
     def __set_value__(self, value, instance: '_FieldRW') -> 'ABCField':
+        if self.__secret__:
+            self.__secret__ = False
         try:
             new_field = self.__clone__()
             if self.__is_primitive_type__():
@@ -384,6 +386,15 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
         self.__name__ = ''
         self.__io_class__ = io_class
 
+        try:
+            dataset = self.__io_class__.read()
+        except FileNotFoundError:
+            self.__write__()
+        else:
+            self.__update__(dataset)        
+
+    def __write__(self):
+        self.__io_class__.write( self.__dataset__() )
 
     def __dataset__(self,*, export_secret: bool = False) -> dict:
         result = {}
@@ -405,5 +416,6 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
                 self.__set_field__(field_name, field.__set_value__(value, self))
             except ValueError as e:
                 raise ValueError(f'{self.__class__.__name__} -> {e}') from e
+        
 
 
