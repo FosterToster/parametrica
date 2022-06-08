@@ -52,10 +52,19 @@ class Metaconfig(ABCMetaconfig):
     def __init__(self, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')) -> None:
         self._initialize(io_class)
 
+    def export(self) -> dict:
+        return self.__dataset__()
+
+    def update(self, dataset: dict):
+        self.__update__(dataset)
+        #TODO write IO
+
 
 class MetaconfigSingletone(Metaconfig):
     def __init__(self) -> None:
         ...
+
+    
 
     def __new__(class_, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')):
         if hasattr(class_, '__instance__'):

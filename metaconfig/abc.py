@@ -68,11 +68,6 @@ class Dataset:
         return node
 
 
-class DataContainer:
-    __dataset__: Dataset = Dataset({})
-    __nav_path__ = ''
-
-
 class ABCField(Generic[T]):
 
     @overload
@@ -108,6 +103,7 @@ class ABCField(Generic[T]):
     def __init__(self, default: Union[T, Callable[[], T]] = None, **default_fields: Dict[str, Any]) -> None:
         self.__default__ = self.__resolve_default__(default, **default_fields)
 
+        self.__value__ = None
         self.__name__ = ''
         self.__label__ = ''
         self.__hint__ = ''
@@ -116,52 +112,58 @@ class ABCField(Generic[T]):
 
         self.__get_default__()
 
-
-    def __try_find_value__(self, parent: 'ABCFieldset', instance: 'ABCFieldset') -> T:
-        parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__)) )
-        if self.__is_primitive_type__():
-                return self.__normalize_value__( parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__))) )
-        elif self.__is_iterable_type__():
-            # parent.__dataset__.get_item_by_path( '.'.join((parent.__nav_path__, self.__name__)) )
-            class _DataproxyIterator(self.__generic_type__()):
-                __dataset__ = parent.__dataset__
-                __nav_path__ = '.'.join((parent.__nav_path__, self.__name__))
-
-
-                def __getitem__(self, idx):
-                    try:
-                        lst = self.__dataset__.get_item_by_path( self.__nav_path__ )
-                        if idx >= len(lst):
-                            raise IndexError('list index out of range')
-                    except AttributeError:
-                        return 
-
-                    class _Dataproxy(self.__class__.__bases__[0]):
-                        __dataset__ = self.__dataset__
-                        __nav_path__ = '.'.join((self.__nav_path__, str(idx)))
-
-                    return _Dataproxy()
-            
-            return _DataproxyIterator()
-        else:
-            class _Dataproxy(self.__generic_type__()):
-                __dataset__ = parent.__dataset__
-                __nav_path__ = '.'.join((parent.__nav_path__, self.__name__))
-            
-            return _Dataproxy()
-        # raise ValueError(f'Type "{parent.__name__}" does not have metafield named "{self.__name__}"')
-
-    def __get__(self, instance, class_) -> T:
+    def __set_value__(self, value, instance: '_FieldRW') -> 'ABCField':
         try:
-            return self.__try_find_value__(class_, instance)
+            new_field = self.__clone__()
+            if self.__is_primitive_type__():
+                new_field.__value__ = new_field.__normalize_value__(value)
+            elif self.__is_iterable_type__():
+                if not hasattr(value, '__iter__'):
+                    value = [value,]
+                result = []
+                for current in self.__get__(instance, instance.__class__):
+                    try:
+                        new = value.pop(0)
+                        result.append(current.__set_value__(new))
+                    except IndexError:
+                        result.append(current)
+
+                for new in value:
+                    result.append(self.__generic_type__()().__set_value__(new))
+
+                new_field.__value__ = result
+            else: # Fieldset
+                new_field.__value__ = self.__get__(instance, instance.__class__).__set_value__(value)
+        except ValueError as e:
+            raise ValueError(f'{self.__name__} -> {e}') from e
+        return new_field
+
+    def __export_data__(self, instance: '_FieldRW'):
+        if self.__is_primitive_type__():
+            return self.__get__(instance, instance.__class__)
+        elif self.__is_iterable_type__():
+            return tuple(x.__export_data__(instance) for x in self.__get__(instance, instance.__class__))
+        else:
+            return self.__get__(instance, instance.__class__).__export_data__(instance)
+        
+
+    def __try_find_value__(self, from_: 'ABCFieldset' = None) -> T:
+        if (from_ or self).__value__ is None:
+            raise AttributeError(f'Value is not assigned')
+        else:
+            return (from_ or self).__value__
+
+    def __get__(self, instance:'_FieldRW', _) -> T:
+        try:
+            return self.__try_find_value__(instance.__get_field__(self.__name__))
         except AttributeError:
-            return self.__get_default__(instance)
+            return self.__get_default__(instance.__get_field__(self.__name__))
 
     def __set__(self, _: T) -> T:
         raise TypeError(f'Field value can not be assigned. Use [Metaconfig].update() method instead.')
 
-    def __is_iterable_type__(self) -> bool:
-        return str(self.__type__).startswith( ('typing.List', 'typing.Tuple', 'typing.Iterable') )
+    def __is_iterable_type__(self, type_ = None) -> bool:
+        return str(type_ or self.__type__).startswith( ('typing.List', 'typing.Tuple', 'typing.Iterable') )
 
     def __generic_type__(self) -> Type[T]:
         if self.__is_iterable_type__():
@@ -169,18 +171,21 @@ class ABCField(Generic[T]):
         else:
             return self.__type__
 
-    def __is_primitive_type__(self) -> bool:
-        typ = self.__generic_type__()
+    def __is_primitive_type__(self, type_ = None) -> bool:
+        typ = type_ or self.__generic_type__()
         return (typ in (int, str, float, bool)) or (issubclass(typ, enum.Enum))
         # return self.__generic_type__() in 
 
     def __ensure_type__(self, value: Any) -> T:
         required_type = self.__generic_type__()
         
+        # try:
         if type(value) != required_type:
             return required_type(value)
         else:
             return value
+        # except ValueError as e:
+        #     raise ValueError(f'{self.__name__} -> {e}') from e
 
     def __normalize_value__(self, value: Any) -> T:
         if self.__is_iterable_type__():
@@ -192,9 +197,12 @@ class ABCField(Generic[T]):
         return self.__validate_value__( self.__ensure_type__( value ) )
 
     def __validate_value__(self, value: T) -> T:
-        if self.__rule__:
-            self.__rule__(value)
-        return value
+        # try:
+            if self.__rule__:
+                self.__rule__(value)
+            return value
+        # except ValueError as e:
+        #     raise ValueError(f'{self.__name__}: {e}') from e
         
     def __new_default__(self, value: Union[T, Callable[[], T]]):
         new_field = self.__clone__()
@@ -203,13 +211,8 @@ class ABCField(Generic[T]):
         return new_field
 
     def __get_default__(self, from_: 'ABCFieldset' = None) -> T:
-        if from_:
-            field = from_.__dict__.get(self.__name__)
-            if field is None:
-                field = self
-        else:
-            field = self
-
+        field = (from_ or self)
+        
         if callable(field.__default__):
             value = field.__default__()
         else:
@@ -217,10 +220,22 @@ class ABCField(Generic[T]):
 
         return field.__normalize_value__(value)
 
+    @classmethod
+    def __check_generic_type__(class_, arg):
+        if class_.__is_iterable_type__(class_, arg):
+            return class_.__check_generic_type__(arg.__args__[0])
         
-    def __class_getitem__(class_, args):
+        if not class_.__is_primitive_type__(class_, arg):
+            if not issubclass(arg, ABCFieldset):
+                raise ValueError(f'Type {arg} can`t be used as Field type')
+
+        
+    def __class_getitem__(class_, arg):
+        if not str(arg).startswith('~'):
+            class_.__check_generic_type__(arg)
+
         class _TypedField(class_):
-            __type__ = args
+            __type__ = arg
 
         return _TypedField
 
@@ -239,32 +254,27 @@ class MetaFieldset(type):
 
     def __new__(class_, name, bases, dict):
         metafields = list()
+
+        # inherit metafield names
+        for base in bases:
+            if hasattr(base, '__metafields__'):
+                for field_name in base.__metafields__:
+                    if not (field_name in metafields):
+                        metafields.append(field_name)
+        
+        # find new metafields
         for key, value in dict.items():
             if isinstance(value, ABCField):
-                metafields.append(key)
+                if not (key in metafields):
+                    metafields.append(key)
                 value.__name__ = key
     
         fieldset = super().__new__(class_, name, bases, dict)
         fieldset.__metafields__ = metafields
         return fieldset
 
-
-class ABCFieldset(ABCField[dict], DataContainer, metaclass=MetaFieldset):
+class _FieldRW:
     
-    def __init__(self, **default_fields: Dict[str, Any]):
-        for key, value in default_fields.items():
-            field: ABCField = self.__get_field__(key)
-            self.__set_field__(key, field.__new_default__(value))
-        
-
-    def __get_default__(self) -> dict:
-        defaults = {}
-        for field_name in self.__metafields__:
-            defaults[field_name] = self.__get_field__(field_name).__get_default__()
-            if isinstance(defaults[field_name], ABCField):
-                defaults[field_name] = defaults[field_name].get_default()
-        return defaults
-
     def __set_field__(self, name, field: ABCField):
         self.__dict__[name] = field
 
@@ -298,6 +308,43 @@ class ABCFieldset(ABCField[dict], DataContainer, metaclass=MetaFieldset):
         else:
             return field
 
+
+class ABCFieldset(ABCField, _FieldRW, metaclass=MetaFieldset):
+    
+    def __init__(self,**default_fields: Dict[str, Any]):
+        defaults = {
+            # **default_keyset,
+            **default_fields
+        }
+        for key, value in defaults.items():
+            field: ABCField = self.__get_field__(key)
+            self.__set_field__(key, field.__new_default__(value))
+        
+
+    def __get_default__(self) -> dict:
+        defaults = {}
+        for field_name in self.__metafields__:
+            defaults[field_name] = self.__get_field__(field_name).__get_default__()
+            if isinstance(defaults[field_name], ABCField):
+                defaults[field_name] = defaults[field_name].get_default()
+        return defaults
+
+    def __set_value__(self, dataset: dict) -> 'ABCFieldset':
+        new_fieldset = self.__clone__()
+        for field_name, value in dataset.items():
+            if not field_name in self.__metafields__:
+                continue
+            field: ABCField = new_fieldset.__get_field__(field_name)
+            # try:
+            new_fieldset.__set_field__(field_name, field.__set_value__(value, new_fieldset))
+            # except ValueError as e:
+            #     raise ValueError(f'{new_fieldset.__class__.__name__} -> {e}') from e
+        
+        return self
+
+    def __export_data__(self, instance: '_FieldRW'):
+        return dict((field_name, self.__get_field__(field_name).__export_data__(self)) for field_name in self.__metafields__)        
+
     def __normalize_value__(self, dataset: dict) -> dict:
         if isinstance(dataset, self.__class__):
             return dataset.__get_default__()
@@ -317,10 +364,31 @@ class ABCFieldset(ABCField[dict], DataContainer, metaclass=MetaFieldset):
                 continue
 
         return resultset
+
+    def __clone__(self, new_default: Any = {}):
+        new_fieldset = self.__class__(**new_default)
+        new_fieldset.__dict__ = self.__dict__
+        return new_fieldset
+
     
 
-class ABCMetaconfig(DataContainer, metaclass=MetaFieldset):
+class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
     def _initialize(self, io_class: ConfigIOInterface):
         self.__name__ = ''
         self.__io_class__ = io_class
+
+
+    def __dataset__(self) -> dict:
+        return dict((field_name, self.__get_field__(field_name).__export_data__(self)) for field_name in self.__metafields__)
+
+    def __update__(self, dataset: dict):
+        for field_name, value in dataset.items():
+            if not field_name in self.__metafields__:
+                continue
+            field: ABCField = self.__get_field__(field_name)
+            try:
+                self.__set_field__(field_name, field.__set_value__(value, self))
+            except ValueError as e:
+                raise ValueError(f'{self.__class__.__name__} -> {e}') from e
+
 

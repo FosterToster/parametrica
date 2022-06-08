@@ -1,7 +1,8 @@
 import enum
+import json
 from metaconfig import Field
 from metaconfig.types import Fieldset, Metaconfig
-from metaconfig.rules import Match, Max, Min, InRange, ABCRule
+from metaconfig.rules import Match, Max, Min, InRange, ABCRule, MaxLen
 from typing import Iterable, List, Tuple
 
 
@@ -20,7 +21,7 @@ class Server(Fieldset):
     port = PortField.label('Порт адрес сервера')
 
 
-class Protocol(enum.Enum):
+class Protocol(str, enum.Enum):
     TCP = 'tcp'
     HTTP = 'http'
     HTTPS = 'https'
@@ -33,11 +34,15 @@ class ProtocolServer(Server):
     # Пометили как секретное
     protocol = ProtocolField.secret()
 
-# Унаследовали ProtocolServer, добавили строковых полей
-class AuthHTTPServer(ProtocolServer):
-    user = Field[str]('').label('Логин пользователя')
+class Credentials(Fieldset):
+    user = Field[str]('').label('Логин пользователя').rule(MaxLen(10))
     pwd = Field[str]('').label('Пароль пользователя')
 
+# Унаследовали ProtocolServer, добавили строковых полей
+class AuthHTTPServer(ProtocolServer):
+    host = HostField.default('192.168.1.100')
+    port = PortField.default(8080)
+    credentials = Field[Credentials](user="carbis", pwd=1234)
 
 class Printer(Fieldset):
     # заюзали старое поле с новым дефолтом
@@ -62,14 +67,56 @@ class Config(Metaconfig):
     # задали массив строк с двумя значениеями по-умолчанию
     data = Field[Tuple[str]](['Привет', 'Мир'])
 
+config = Config()
+# print( 'config.how_many ', config.how_many )
+# print( 'config.local_server.host ', config.local_server.host )
+# print( 'config.local_server.port ', config.local_server.port )
+# print( 'config.r_keeper.protocol ', config.r_keeper.protocol )
+# print( 'config.r_keeper.credentials.user ', config.r_keeper.credentials.user )
+# print( 'config.r_keeper.credentials.pwd ', config.r_keeper.credentials.pwd )
+# print( 'config.counts ', config.counts )
+# print( 'config.printers[0].name ', config.printers[0].name )
+# print( 'config.printers[0].port ', config.printers[0].port )
+# print( 'config.data', config.data)
+# print()
+# config.update({
+#     'how_many': "Привет",
+#     "local_server": {
+#         "host": "192.168.1.1",
+#         "port": "2212"
+#     },
+#     "r_keeper": {
+#         'protocol': 'tcp',
+#         'credentials': {
+#             'user': "momaафаф",
+#             'pwd': "1",
+#         }
+#     },
+#     "counts": [1,2,5],
+#     "printers": [
+#         {},
+#         {
+#             "name": "Принтер великолепный"
+#         },
+    
+#     ],
+#     "data": ["Hello", "world"]
 
-print( Config().how_many )
-print( Config().local_server.host )
-print( Config().local_server.port )
-print( Config().r_keeper.protocol )
-print( Config().counts )
-print( Config().printers[0].name )
-print( Config().printers[0].port )
-print( Config().data)
+# })
+
+print(json.dumps(config.export(), indent=2, ensure_ascii=False))
+
+# print( 'config.how_many ', config.how_many )
+# print( 'config.local_server.host ', config.local_server.host )
+# print( 'config.local_server.port ', config.local_server.port )
+# print( 'config.r_keeper.protocol ', config.r_keeper.protocol )
+# print( 'config.r_keeper.credentials.user ', config.r_keeper.credentials.user )
+# print( 'config.r_keeper.credentials.pwd ', config.r_keeper.credentials.pwd )
+# print( 'config.counts ', config.counts )
+# print( 'config.printers[0].name ', config.printers[0].name )
+# print( 'config.printers[0].port ', config.printers[0].port )
+# print( 'config.printers[1].name ', config.printers[1].name )
+# print( 'config.printers[1].port ', config.printers[1].port )
+# print( 'config.data', config.data)
 
 
