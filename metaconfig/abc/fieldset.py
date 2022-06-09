@@ -142,11 +142,12 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
 
         try:
             dataset = self.__io_class__.read()
+            self.__update__(dataset)        
         except FileNotFoundError:
             self.__write__()
         else:
-            self.__update__(dataset)        
-
+            self.__write__()
+        
     def __write__(self):
         self.__io_class__.write( self.__dataset__() )
 
