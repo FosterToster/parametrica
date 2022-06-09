@@ -17,6 +17,9 @@ class ABCField(Generic[T]):
         ...
        
     def __init__(self, default: Union[T, Callable[[], T]] = None, **default_fields: Dict[str, Any]) -> None:
+        if hasattr(self, '__default__'): # prevent double initialization
+            return
+
         self.__default__ = self.__resolve_default__(default, **default_fields)
 
         self.__value__ = None
