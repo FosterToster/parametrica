@@ -30,7 +30,7 @@ class ABCField(Generic[T]):
         self.__secret__ = False
 
         self.__get_default__()
-
+    
     def __resolve_default__(self, default: Union[T, Callable[[], T]] = None, **default_fields: Dict[str, Any]) -> Any:
         if default is None:
             if self.__is_iterable_type__():
@@ -190,5 +190,31 @@ class ABCField(Generic[T]):
         new_field.__secret__ = self.__secret__
 
         return new_field
+
+    def __metadata__(self, instance: '_FieldRW'):
+        if self.__is_primitive_type__():
+            return {
+                'is_primitive': True,
+                'is_iterable': self.__is_iterable_type__(),
+                'type': self.__generic_type__().__name__,
+                'default': self.__get_default__(instance.__get_field__(self.__name__)),
+                'name': self.__name__,
+                'label': self.__label__,
+                'hint': self.__hint__,
+                'rule': str(self.__rule__) if self.__rule__ else None,
+                'secret': self.__secret__,
+            }
+        else:
+            return {
+                'is_primitive': False,
+                'is_iterable': self.__is_iterable_type__(),
+                'type': self.__get__(instance, instance.__class__).__metadata__(instance),
+                # 'default': self.__get_default__(instance).__metadata__(instance),
+                'name': self.__name__,
+                'label': self.__label__,
+                'hint': self.__hint__,
+                'secret': self.__secret__,
+            }
+
 
 from .fieldset import ABCFieldset, _FieldRW

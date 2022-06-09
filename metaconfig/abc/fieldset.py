@@ -133,6 +133,13 @@ class ABCFieldset(ABCField, _FieldRW, metaclass=MetaFieldset):
         new_fieldset.__dict__ = self.__dict__
         return new_fieldset
 
+    def __metadata__(self, instance: _FieldRW):
+        metadata = dict()
+        for field_name in self.__metafields__:
+            field = self.__get_field__(field_name)
+            metadata[field_name] = field.__metadata__(self)
+        return metadata
+
     
 
 class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
@@ -149,7 +156,7 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
             self.__write__()
         
     def __write__(self):
-        self.__io_class__.write( self.__dataset__() )
+        self.__io_class__.write( self.__dataset__(), self.__metadata__() )
 
     def __dataset__(self,*, export_secret: bool = False) -> dict:
         result = {}
@@ -161,6 +168,14 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
 
         return result
         # return dict((field_name, self.__get_field__(field_name).__export_data__(self, export_sercet=export_sercet)) for field_name in self.__metafields__)
+    
+    def __metadata__(self) -> dict:
+        metadata = dict()
+        for field_name in self.__metafields__:
+            field = self.__get_field__(field_name)
+            metadata[field_name] = field.__metadata__(self)
+
+        return metadata
 
     def __update__(self, dataset: dict):
         for field_name, value in dataset.items():
