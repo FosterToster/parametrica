@@ -93,6 +93,7 @@ class MaxLen(Rule[list, str]):
 
 class Match(Rule[str]):
     def __init__(self, mask: str) -> None:
+        self.value = mask
         self.regex = re.compile(mask)
 
     def try_check(self, value):

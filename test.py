@@ -1,8 +1,9 @@
 import enum
 import json
 from metaconfig import Field
-from metaconfig.types import Fieldset, Metaconfig
-from metaconfig.rules import Match, Max, Min, InRange, ABCRule, MaxLen
+from metaconfig.io import VirtualJsonFileConfigIO
+from metaconfig import Fieldset, Metaconfig
+from metaconfig import Match, Max, Min, InRange, MaxLen
 from typing import Iterable, List, Tuple
 
 
@@ -67,56 +68,8 @@ class Config(Metaconfig):
     # задали массив строк с двумя значениеями по-умолчанию
     data = Field[Tuple[str]](['Привет', 'Мир'])
 
-config = Config()
-# print( 'config.how_many ', config.how_many )
-# print( 'config.local_server.host ', config.local_server.host )
-# print( 'config.local_server.port ', config.local_server.port )
-# print( 'config.r_keeper.protocol ', config.r_keeper.protocol )
-# print( 'config.r_keeper.credentials.user ', config.r_keeper.credentials.user )
-# print( 'config.r_keeper.credentials.pwd ', config.r_keeper.credentials.pwd )
-# print( 'config.counts ', config.counts )
-# print( 'config.printers[0].name ', config.printers[0].name )
-# print( 'config.printers[0].port ', config.printers[0].port )
-# print( 'config.data', config.data)
-# print()
-# config.update({
-#     'how_many': "Привет",
-#     "local_server": {
-#         "host": "192.168.1.1",
-#         "port": "2212"
-#     },
-#     "r_keeper": {
-#         'protocol': 'tcp',
-#         'credentials': {
-#             'user': "momaафаф",
-#             'pwd': "1",
-#         }
-#     },
-#     "counts": [1,2,5],
-#     "printers": [
-#         {},
-#         {
-#             "name": "Принтер великолепный"
-#         },
-    
-#     ],
-#     "data": ["Hello", "world"]
+config = Config(VirtualJsonFileConfigIO('conf.json'))
 
-# })
 
 print(json.dumps(config.export(export_secret=False), indent=2, ensure_ascii=False))
-
-# print( 'config.how_many ', config.how_many )
-# print( 'config.local_server.host ', config.local_server.host )
-# print( 'config.local_server.port ', config.local_server.port )
-# print( 'config.r_keeper.protocol ', config.r_keeper.protocol )
-# print( 'config.r_keeper.credentials.user ', config.r_keeper.credentials.user )
-# print( 'config.r_keeper.credentials.pwd ', config.r_keeper.credentials.pwd )
-# print( 'config.counts ', config.counts )
-# print( 'config.printers[0].name ', config.printers[0].name )
-# print( 'config.printers[0].port ', config.printers[0].port )
-# print( 'config.printers[1].name ', config.printers[1].name )
-# print( 'config.printers[1].port ', config.printers[1].port )
-# print( 'config.data', config.data)
-
 

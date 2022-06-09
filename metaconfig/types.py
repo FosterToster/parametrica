@@ -58,13 +58,11 @@ class Metaconfig(ABCMetaconfig):
     def update(self, dataset: dict):
         self.__update__(dataset)
         self.__write__()
-        
+
 
 class MetaconfigSingletone(Metaconfig):
     def __init__(self) -> None:
         ...
-
-    
 
     def __new__(class_, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')):
         if hasattr(class_, '__instance__'):

@@ -33,14 +33,14 @@ class FileConfigIOInterface(ConfigIOInterface):
         return self.__filename
 
     def read(self) -> dict:
-        with open(self.__filename, 'r') as f:
+        with open(self.__filename, 'r', encoding='utf-8') as f:
             data = f.read()
             f.close()
         
         return self.parse(data)
         
     def write(self, dataset: dict):
-        with open(self.__filename, 'w+') as f:
+        with open(self.__filename, 'w+', encoding='utf-8') as f:
             f.write(self.serialize(dataset))
             f.close()
 
