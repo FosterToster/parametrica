@@ -110,7 +110,7 @@ class Credentials(Fieldset):
 
 class HTTPServer(Server, ProtocolHTTPVariant):
 
-    url_prefix = PathField('/').secret()
+    url_prefix = PathField('/').label('URL префикс запросов').secret()
         
     @property
     def origin(self) -> str:
