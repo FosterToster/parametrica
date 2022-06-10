@@ -61,7 +61,7 @@ class Metaconfig(ABCMetaconfig):
 
 
 class MetaconfigSingletone(Metaconfig):
-    def __init__(self) -> None:
+    def __init__(self, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')) -> None:
         ...
 
     def __new__(class_, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')):

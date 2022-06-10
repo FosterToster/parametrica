@@ -3,8 +3,9 @@ import json
 
 class ConfigIOInterface(ABC):
 
-    def __init__(self, ) -> None:
+    def __init__(self) -> None:
         super().__init__()
+        self.parent: ABCMetaconfig
     
     @abstractmethod
     def read(self) -> dict:
@@ -27,6 +28,7 @@ class FileConfigIOInterface(ConfigIOInterface):
     
     def __init__(self, filename: str) -> None:
         self.__filename = filename
+        super().__init__()
 
     @property
     def filename(self):

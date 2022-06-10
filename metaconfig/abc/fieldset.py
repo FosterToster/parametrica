@@ -1,8 +1,6 @@
 from typing import Any, Dict
 
 from .field import ABCField
-from ..io import ConfigIOInterface
-
 
 class MetaFieldset(type):
 
@@ -143,9 +141,10 @@ class ABCFieldset(ABCField, _FieldRW, metaclass=MetaFieldset):
     
 
 class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
-    def _initialize(self, io_class: ConfigIOInterface):
+    def _initialize(self, io_class: 'ConfigIOInterface'):
         self.__name__ = ''
         self.__io_class__ = io_class
+        self.__io_class__.parent = self
 
         try:
             dataset = self.__io_class__.read()
@@ -156,7 +155,7 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
             self.__write__()
         
     def __write__(self):
-        self.__io_class__.write( self.__dataset__(), self.__metadata__() )
+        self.__io_class__.write( self.__dataset__() )
 
     def __dataset__(self,*, export_secret: bool = False) -> dict:
         result = {}
@@ -186,3 +185,6 @@ class ABCMetaconfig(_FieldRW, metaclass=MetaFieldset):
                 self.__set_field__(field_name, field.__set_value__(value, self))
             except ValueError as e:
                 raise ValueError(f'{self.__class__.__name__} -> {e}') from e
+
+
+from ..io import ConfigIOInterface
