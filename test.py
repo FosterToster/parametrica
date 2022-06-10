@@ -1,12 +1,15 @@
 from metaconfig import MetaconfigSingletone, Field
 from metaconfig.predefined.network import BasicAuthHTTPServer, Server
+from metaconfig.io import YAMLFileConfigIO
 
+class NestedBasicAuthHTTPServer(BasicAuthHTTPServer):
+    nested = Field[Server](host='109.202.22.231', port=55000).label('XML интерфейс связанной кассовой станции')
 
 class Config(MetaconfigSingletone):
-    rk_server = Field[BasicAuthHTTPServer](host="127.0.0.1", port=8091)
-    local_server = Field[Server](port=2319)
+    rk_server = Field[NestedBasicAuthHTTPServer](host="127.0.0.1", port=8091).label('Кассовый сервер r_keeper')
+    local_server = Field[Server](port=2319).label('Локальный сервер')
 
-config = Config()
+config = Config(YAMLFileConfigIO('config.yaml', export_comments=True))
 print('rk_server.address', config.rk_server.address )
 print('rk_server.origin', config.rk_server.origin )
 print('rk_server.auth', config.rk_server.auth )
