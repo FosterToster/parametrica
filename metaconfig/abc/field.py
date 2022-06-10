@@ -82,7 +82,11 @@ class ABCField(Generic[T]):
 
     def __export_data__(self, instance: '_FieldRW', *, export_secret: bool = False):
         if self.__is_primitive_type__():
-            return self.__get__(instance, instance.__class__)
+            val = self.__get__(instance, instance.__class__)
+            if isinstance(val, enum.Enum):
+                return val.value
+            else:
+                return val
         elif self.__is_iterable_type__():
             return tuple(x.__export_data__(instance, export_secret=export_secret) for x in self.__get__(instance, instance.__class__))
         else:
