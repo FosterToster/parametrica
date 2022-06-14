@@ -121,7 +121,7 @@ class YAMLFileConfigIO(FileConfigIOInterface):
         return resultstr
             
     def serialize(self, dataset: dict) -> str:
-        resultstr = self.yaml.dump(dataset, sort_keys=False, default_flow_style=False, allow_unicode=True, Dumper=self.yaml.Dumper)
+        resultstr = self.yaml.dump(dataset, sort_keys=False, default_flow_style=False, default_style=None, allow_unicode=True, canonical=None, Dumper=self.yaml.SafeDumper)
         return self.make_comments(self.parent, dataset, resultstr) if self.export_comments else resultstr
 
     def parse(self, data: str) -> dict:
