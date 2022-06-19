@@ -51,29 +51,24 @@ if __name__ == "__main__":
 
         local_server.run()
 ```
-<span id="headings_start"/>
-
-- [Parametrica](#head-0)
-  - [Basic example](#head-1)
+# Table of contents
 - [Utility classes](#head-2)
-  - [class `Fieldset`](#head-3)
-  - [class `Field[T]`](#head-4)
-    - [Description:](#head-5)
-    - [Methods:](#head-6)
-      - [.label(text: str)](#head-7)
-      - [.hint(text: str)](#head-8)
-      - [.secret(value: bool = True)](#head-9)
-      - [.rule(rule: ABCRule)](#head-10)
-      - [.default(value: Union[T, Callable[[], T]])](#head-11)
+  - [class "Fieldset"](#head-3)
+  - [class "Field"](#head-4)
+    - [Methods](#head-6)
+      - [label](#head-7)
+      - [hint](#head-8)
+      - [secret](#head-9)
+      - [rule](#head-10)
+      - [default](#head-11)
     - [Usage](#head-12)
       - [With Primitive types](#head-13)
         - [Value normalization](#head-14)
       - [With Fieldset children](#head-15)
-      - [With `typing` iterables](#head-16)
-  - [class `Parametrica`](#head-17)
+      - [With "typing" iterables](#head-16)
+  - [class "Parametrica"](#head-17)
     - [IO classes](#head-18)
 
-<span id="headings_end"/>
 
 
 # <span name="head-2">Utility classes</span>
@@ -83,8 +78,6 @@ There are several utility classes for defining a configuration schema: `Field`, 
 #TODO
 
 ## <span name="head-4">class `Field[T]`</span>
-
-### <span name="head-5">Description:</span>
 
 `Field` is a generic class.\
 Its generic agrument defines which type will be contained in this field.\
