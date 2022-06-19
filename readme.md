@@ -80,21 +80,22 @@ There are several utility classes for defining a configuration schema: `Field`, 
 ## <span name="head-4">class `Field[T]`</span>
 
 `Field` is a generic class.\
-Its generic agrument defines which type will be contained in this field.\
+Its generic agrument defines which type will be contained in field instance.\
 Currently supported types:
   - Primitive:
     - `str`
     - `int`
     - `bool`
     - `float`
-  - Any children of `Fieldset`
-  - abowe `typing` module iterables:
+  - `enum.Enum` types (interpretes as primitive)
+  - `Fieldset` children
+  - `typing` module iterables:
     - `Iterable[T]`
     - `Tuple[T]`
     - `List[T]`
 
 ### <span name="head-6">Methods:</span>
-`Field` instance have some utility methods to provide additional information about its instance.\
+`Field` instance have some utility methods to provide additional information about itself.\
 They`re meant to be called in chain stight after initialization.\
 **Be careful!** Every utility method will **clone** current instance and return it modified.
 
@@ -133,11 +134,11 @@ It can be useful if you've created a common field to use it in different fieldse
 #define a common field
 PortField = Field[int](8080).label('Server port').rule(InRange(0, 65535))
 
-#Use it in a common way
+#Use it in a common case
 class ApiServer(FieldSet):
     port = PortField
 
-#Use it in a special way
+#Use it in a special case
 class LocalServer(Fieldset):
     port = PortField.default(lambda: input('Type local server port (0..65535): '))
 
@@ -169,10 +170,11 @@ So, below example is also correct because `bool(1) == True`
 Field[bool](1)
 ```
 This principle guarantees that you will always have value of expected type in your field.\
-It may be necessary for comparison, for example ('1234' != 1234).
+It may be necessary for comparison.
+
 
 #### <span name="head-15">With Fieldset children</span>
-`Field` of type which is inherited from `Fieldset` does not require any default value because all defaults alredy was defined in `Fieldset`'s child.\
+`Field` of type which is inherited from `Fieldset` does not require any default value because all defaults alredy been defined in its type.\
 But you always able to override it by two similar ways:
   - By `Fieldset` instance\
   Just pass instance of your fieldset as default value on `Field` initialization
@@ -184,7 +186,7 @@ But you always able to override it by two similar ways:
   ```
   - implicit initialization\
   Initialize `Field` with kwargs which are matches `Fieldset`'s field names\
-  This way can save you some time and makes this more readable in my opinion.\
+  This feature makes code a little more readable.\
   Under the hood it works exatly like previous example.
   ```python
   class Common(Fieldset):
@@ -197,11 +199,11 @@ But you always able to override it by two similar ways:
 #### <span name="head-16">With `typing` iterables</span>
 Usage with iterable fields is very similar, but it also supports iterables as default value.\
 
-The rules of initialization with primitive or `Fieldset` types are also the same but here is two nuances:
+The rules of initialization with primitive or `Fieldset` types are also the same but here is several nuances:
   - default value for primitive iterables is not required.
   - rules passed for iterable fields acts for each item, not for field.
-  - If default value is not iterable, it will be interpreted as default for first item of iterable value.
-  - Any on supported typing iterable types will be converted to tuple on reading
+  - If default value is passed, but it is not iterable, it will be interpreted as default for first item of iterable value.
+  - All of supported typing iterable types will be converted to tuple on reading
 
 Some examples:
 ```python
@@ -240,7 +242,7 @@ class IterableExamples(Parametrica):
         )
     )
 
-#All iterable fields becomes tuples when you try to read it
+#All iterable fields become tuples when you try to read it
 assert isinstance(IterableExamples().empty_integer_list, tuple)
 assert isinstance(IterableExamples().default_float_list, tuple)
 assert isinstance(IterableExamples().empty_server_pool, tuple)
