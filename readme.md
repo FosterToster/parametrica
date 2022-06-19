@@ -1,12 +1,10 @@
 # Parametrica
-
-## What is it?
+What is it?\
 Parametrica is an ORM for application configurations.\
 With it you will able to define your configuration schema in the easiest way!
 
-
 ## Basic example
-
+`./config.py`
 ```python
 # [config.py]
 from parametrica import Field, Fieldset, Parametrica, InRange, io.JsonFileConfigIO
@@ -29,8 +27,9 @@ class Config(Parametrica):
     # of course, you can define any field in the config root
     deferred_startup = Field[bool](False).label('Start server after 10 secs')
 
-
-
+```
+`./app.py`
+```python
 #[app.py]
 from config import Config
 from server import SomeLocalServer
@@ -55,10 +54,18 @@ if __name__ == "__main__":
         local_server.run()
 ```
 
+<span id="headings_start"/>
+## new headings
+<span id="headings_end"/>
+
+
 # Utility classes
 There are several utility classes for defining a configuration schema: `Field`, `Fieldset`, `Parametrica` and `Rule` children.
 
-## class 'Field[T]'
+## class `Fieldset`
+# TODO
+
+## class `Field[T]`
 
 ### Description:
 
@@ -231,3 +238,7 @@ assert isinstance(IterableExamples().two_defaults_server_pool, tuple)
 
 ```
 
+## class `Parametrica`
+//TODO
+### IO classes
+//TODO
