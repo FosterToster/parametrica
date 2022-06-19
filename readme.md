@@ -71,7 +71,7 @@ Currently supported types:
     - `bool`
     - `float`
   - Any children of `Fieldset`
-  - typing module of any type abowe
+  - abowe `typing` module iterables:
     - `Iterable[T]`
     - `Tuple[T]`
     - `List[T]`
