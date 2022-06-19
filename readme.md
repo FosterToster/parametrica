@@ -1,36 +1,34 @@
-# Parametrica
+# <span name="#head-0">Parametrica</span>
 What is it?\
 Parametrica is an ORM for application configurations.\
 With it you will able to define your configuration schema in the easiest way!
 
-## Basic example
+## <span name="#head-1">Basic example</span>
 `./config.py`
 ```python
-# [config.py]
 from parametrica import Field, Fieldset, Parametrica, InRange, io.JsonFileConfigIO
 
-# Let`s define a Server fieldset
+#Let`s define a Server fieldset
 class Server(Fieldset):
     host = Field[str](default='0.0.0.0').label('Server address')
     port = Field[int](default=0).label('Server port').rule(InRange(0, 65535))
 
-# Inheritance is also supported
+#Inheritance is also supported
 class AuthServer(Server):
     user = Field[str]('admin').label('Username')
     password = Field[str]('P@55\/\/0rd').lable('Password')
 
-# Finally, define a configuration root
+#Finally, define a configuration root
 class Config(Parametrica):
     api_server = Field[AuthServer](host="any.api.com", port="443").label('API Server')
     local_server = Field[Server](port=8080).label('Local server')
 
-    # of course, you can define any field in the config root
+    #of course, you can define any field in the config root
     deferred_startup = Field[bool](False).label('Start server after 10 secs')
 
 ```
 `./app.py`
 ```python
-#[app.py]
 from config import Config
 from server import SomeLocalServer
 from api_helper improt SomeApiHelper
@@ -53,21 +51,39 @@ if __name__ == "__main__":
 
         local_server.run()
 ```
-
+# Table of content
 <span id="headings_start"/>
-## new headings
+
+- [Utility classes](#head-2)
+  - [class `Fieldset`](#head-3)
+  - [class `Field[T]`](#head-4)
+    - [Description:](#head-5)
+    - [Methods:](#head-6)
+      - [.label(text: str)](#head-7)
+      - [.hint(text: str)](#head-8)
+      - [.secret(value: bool = True)](#head-9)
+      - [.rule(rule: ABCRule)](#head-10)
+      - [.default(value: Union[T, Callable[[], T]])](#head-11)
+    - [Usage](#head-12)
+      - [With Primitive types](#head-13)
+        - [Value normalization](#head-14)
+      - [With Fieldset children](#head-15)
+      - [With `typing` iterables](#head-16)
+  - [class `Parametrica`](#head-17)
+    - [IO classes](#head-18)
+
 <span id="headings_end"/>
 
 
-# Utility classes
+# <span name="#head-2">Utility classes</span>
 There are several utility classes for defining a configuration schema: `Field`, `Fieldset`, `Parametrica` and `Rule` children.
 
-## class `Fieldset`
-# TODO
+## <span name="#head-3">class `Fieldset`</span>
+#TODO
 
-## class `Field[T]`
+## <span name="#head-4">class `Field[T]`</span>
 
-### Description:
+### <span name="#head-5">Description:</span>
 
 `Field` is a generic class.\
 Its generic agrument defines which type will be contained in this field.\
@@ -83,32 +99,32 @@ Currently supported types:
     - `Tuple[T]`
     - `List[T]`
 
-### Methods:
+### <span name="#head-6">Methods:</span>
 `Field` instance have some utility methods to provide additional information about its instance.\
 They`re meant to be called in chain stight after initialization.\
 **Be careful!** Every utility method will **clone** current instance and return it modified.
 
-#### .label(text: str)
+#### <span name="#head-7">.label(text: str)</span>
 Add a human-readable label for field
 ```python
 Field[str]('John Doe').label('Default customer name')
 ```
 
-#### .hint(text: str)
+#### <span name="#head-8">.hint(text: str)</span>
 Add more explanations for field purpose or its specific values
 ```python
 Field[str]('John Doe').label('Default customer name')\
     .hint('This name will be assigned to each customer record created automatically')
 ```
 
-#### .secret(value: bool = True)
+#### <span name="#head-9">.secret(value: bool = True)</span>
 Make field secret (or not - depends on value)\
 Secret fields will not be exported to persistent storage until they was expicitly modified.
 ```python
 Field[str]('John Doe').label('Default customer name').secret()
 ```
 
-#### .rule(rule: ABCRule)
+#### <span name="#head-10">.rule(rule: ABCRule)</span>
 Add a rule for field value.\
 Calling this method will cause type-check for passed rule and field`s generic argument.\
 **TypeError** will be raised if passed rule does not support values of field's type
@@ -116,34 +132,34 @@ Calling this method will cause type-check for passed rule and field`s generic ar
 Field[int](8080).label('TCP Port').rule( InRange(0, 65535) )
 ```
 
-#### .default(value: Union[T, Callable[[], T]])
+#### <span name="#head-11">.default(value: Union[T, Callable[[], T]])</span>
 Override default value passed with initialization.\
 It can be useful if you've created a common field to use it in different fieldsets, and you need replace default value in special case.
 ```python
-# define a common field
+#define a common field
 PortField = Field[int](8080).label('Server port').rule(InRange(0, 65535))
 
-# Use it in a common way
+#Use it in a common way
 class ApiServer(FieldSet):
     port = PortField
 
-# Use it in a special way
+#Use it in a special way
 class LocalServer(Fieldset):
     port = PortField.default(lambda: input('Type local server port (0..65535): '))
 
 ```
-### Usage
-#### With Primitive types
+### <span name="#head-12">Usage</span>
+#### <span name="#head-13">With Primitive types</span>
 Each `Field ` of primitive type must be initialized with default value.\
 ```python
-# WRONG
+#WRONG
 Field[bool]() # raises ValueError
 
-# CORRECT
+#CORRECT
 Field[bool](False)
 ```
 
-##### Value normalization
+##### <span name="#head-14">Value normalization</span>
 Fields will always try to cast its values to generic type simply by wrapping value with generic type (for default values too):
 ```python
 def normalize(type_: Type[T], value: Any) -> T:
@@ -155,13 +171,13 @@ normalized: T = normalize(T, raw) # int('1234')
 ```
 So, below example is also correct because `bool(1) == True`
 ```python
-# CORRECT
+#CORRECT
 Field[bool](1)
 ```
 This principle guarantees that you will always have value of expected type in your field.\
 It may be necessary for comparison, for example ('1234' != 1234).
 
-#### With Fieldset children
+#### <span name="#head-15">With Fieldset children</span>
 `Field` of type which is inherited from `Fieldset` does not require any default value because all defaults alredy was defined in `Fieldset`'s child.\
 But you always able to override it by two similar ways:
   - By `Fieldset` instance\
@@ -184,7 +200,7 @@ But you always able to override it by two similar ways:
   Field[Common](value='default value overridden')
   ```
 
-#### With `typing` iterables
+#### <span name="#head-16">With `typing` iterables</span>
 Usage with iterable fields is very similar, but it also supports iterables as default value.\
 
 The rules of initialization with primitive or `Fieldset` types are also the same but here is two nuances:
@@ -198,13 +214,13 @@ Some examples:
 from parametrica import Max, Fieldset, Parametrica
 from typing import List, Iterable, Tuple
 
-# Fieldset child class
+#Fieldset child class
 class Server(Fieldset):
     host = Field[str](default='0.0.0.0')
     port = Field[int](default=0).rule(InRange(0, 65535))
 
 
-# config root
+#config root
 class IterableExamples(Parametrica):
     # list of integers. Empty by default.
     # Each item in list must be less or equal 10
@@ -230,6 +246,7 @@ class IterableExamples(Parametrica):
         )
     )
 
+#All iterable fields becomes tuples when you try to read it
 assert isinstance(IterableExamples().empty_integer_list, tuple)
 assert isinstance(IterableExamples().default_float_list, tuple)
 assert isinstance(IterableExamples().empty_server_pool, tuple)
@@ -238,7 +255,7 @@ assert isinstance(IterableExamples().two_defaults_server_pool, tuple)
 
 ```
 
-## class `Parametrica`
-//TODO
-### IO classes
-//TODO
+## <span name="#head-17">class `Parametrica`</span>
+#TODO
+### <span name="#head-18">IO classes</span>
+#TODO
