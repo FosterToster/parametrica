@@ -55,6 +55,7 @@ if __name__ == "__main__":
 - [Utility classes](#head-2)
   - [class "Fieldset"](#head-3)
   - [class "Field"](#head-4)
+    - [Value normalization](#head-14)
     - [Methods](#head-6)
       - [label](#head-7)
       - [hint](#head-8)
@@ -63,7 +64,7 @@ if __name__ == "__main__":
       - [default](#head-11)
     - [Usage](#head-12)
       - [With Primitive types](#head-13)
-        - [Value normalization](#head-14)
+        
       - [With Fieldset children](#head-15)
       - [With "typing" iterables](#head-16)
   - [class "Parametrica"](#head-17)
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 There are several utility classes for defining a configuration schema: `Field`, `Fieldset`, `Parametrica` and `Rule` children.
 
 ## <span name="head-3">class `Fieldset`</span>
-#TODO
+This is an abstract class used to be universal parent for all classes 
 
 ## <span name="head-4">class `Field[T]`</span>
 
@@ -93,6 +94,44 @@ Currently supported types:
     - `Iterable[T]`
     - `Tuple[T]`
     - `List[T]`
+
+Every `Field` must be instantiatied with generic argument and assigned with static field of `Fieldset` or `Parametrica` child.\
+Eventually it will be interpreted as model field definition.\
+Init arg of field defines its default value.
+
+This record:
+```python
+class Model(Fieldset):
+    name = Field[str]('John Doe')
+```
+means that we have some fieldset `Model` which is have the only field **_name_** of type `str` with default value **_John Doe_**
+
+Also you can pass a `callable` as init argument instead of explicit value.\
+It does'nt take any args, but should return default value of field's type.
+
+In common case default value, or `callable` return type, should equals with field's generic agrument, but it is not strict rule because of **_value normalization principle_**
+
+### <span name="head-14">Value normalization principle</span>
+
+Fields will always try to cast values to its generic type simply by wrapping value with it (for default values and `callable` results too)\
+It works like that:
+```python
+def normalize(type_: Type[T], value: Any) -> T:
+    return type_(value)
+
+raw = '1234'
+T = int
+normalized: T = normalize(T, raw) # int('1234')
+assert isinstance(normalized, T)
+```
+So, below example is also correct because `bool(1) == True`
+```python
+#CORRECT
+Field[bool](1)
+```
+This principle guarantees that you will always have value of expected type in your field.\
+It may be necessary for comparison.
+
 
 ### <span name="head-6">Methods:</span>
 `Field` instance have some utility methods to provide additional information about itself.\
@@ -153,25 +192,6 @@ Field[bool]() # raises ValueError
 #CORRECT
 Field[bool](False)
 ```
-
-##### <span name="head-14">Value normalization</span>
-Fields will always try to cast its values to generic type simply by wrapping value with generic type (for default values too):
-```python
-def normalize(type_: Type[T], value: Any) -> T:
-    return type_(value)
-
-raw = '1234'
-T = int
-normalized: T = normalize(T, raw) # int('1234')
-```
-So, below example is also correct because `bool(1) == True`
-```python
-#CORRECT
-Field[bool](1)
-```
-This principle guarantees that you will always have value of expected type in your field.\
-It may be necessary for comparison.
-
 
 #### <span name="head-15">With Fieldset children</span>
 `Field` of type which is inherited from `Fieldset` does not require any default value because all defaults alredy been defined in its type.\
