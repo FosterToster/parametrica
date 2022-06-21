@@ -171,7 +171,7 @@ class ABCField(Generic[T]):
         
         if not class_.__is_primitive_type__(class_, arg):
             if not issubclass(arg, ABCFieldset):
-                raise ValueError(f'Type {arg} can`t be used as Field type')
+                raise TypeError(f'Type {arg} can`t be used as Field type')
 
         
     def __class_getitem__(class_, arg):
