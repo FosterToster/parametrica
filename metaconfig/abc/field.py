@@ -151,9 +151,7 @@ class ABCField(Generic[T]):
         #     raise ValueError(f'{self.__name__}: {e}') from e
         
     def __new_default__(self, value: Union[T, Callable[[], T]]):
-        new_field = self.__clone__()
-        new_field.__default__ = value
-        new_field.__get_default__()
+        new_field = self.__clone__(value)
         return new_field
 
     def __get_default__(self, from_: 'ABCFieldset' = None) -> T:
