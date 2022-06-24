@@ -63,9 +63,9 @@ class _FieldRW:
 
 class ABCFieldset(ABCField, _FieldRW, metaclass=MetaFieldset):
     
-    def __init__(self,**default_fields: Dict[str, Any]):
+    def __init__(self, default_keyset: dict = {}, **default_fields: Dict[str, Any]):
         defaults = {
-            # **default_keyset,
+            **default_keyset,
             **default_fields
         }
         for key, value in defaults.items():
@@ -94,7 +94,7 @@ class ABCFieldset(ABCField, _FieldRW, metaclass=MetaFieldset):
             # except ValueError as e:
             #     raise ValueError(f'{new_fieldset.__class__.__name__} -> {e}') from e
         
-        return self
+        return new_fieldset
 
     def __export_data__(self, instance: '_FieldRW', *, export_secret: bool = False):
         result = {}
