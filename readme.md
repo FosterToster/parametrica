@@ -1,4 +1,4 @@
-![Logo](/FosterToster/metaconfig/raw/assets/blob/Logo.png?raw=true)
+![Logo](/wiki/Logo.png?raw=true)
 
 What is it?\
 Parametrica is an ORM for application configurations.\
