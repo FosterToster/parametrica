@@ -6,9 +6,6 @@ class Rule(ABCRule):
     def __add__(self, other: 'ABCRule') -> 'ABCRule':
         return AND(self, other)
     
-    def __radd__(self, other: 'ABCRule') -> 'ABCRule':
-        return AND(self, other)
-
     def __or__(self, other: 'ABCRule') -> 'ABCRule':
         return OR(self, other)
 

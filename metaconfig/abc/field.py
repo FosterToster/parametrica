@@ -10,11 +10,11 @@ class ABCField(Generic[T]):
 
     @overload
     def __init__(self, default: Union[T, Callable[[], T]]):
-        ...
+        pass
 
     @overload
     def __init__(self, **default_fields: Dict[str, Any]):
-        ...
+        pass
        
     def __init__(self, default: Union[T, Callable[[], T]] = None, **default_fields: Dict[str, Any]) -> None:
         if hasattr(self, '__default__'): # prevent double initialization
