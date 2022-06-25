@@ -1,4 +1,4 @@
-![Logo](/blob/assets/Logo.png?raw=true)
+![Logo](../blob/assets/Logo.png?raw=true)
 
 What is it?\
 Parametrica is an ORM for application configurations.\
