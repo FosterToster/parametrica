@@ -1,4 +1,5 @@
-# <span name="head-0">Parametrica</span>
+![Logo](/blob/assets/Logo.png?raw=true)
+
 What is it?\
 Parametrica is an ORM for application configurations.\
 With it you will able to define your configuration schema in the easiest way!
