@@ -109,4 +109,22 @@ class TestFieldset(unittest.TestCase):
         instance = CustomServer()
         self.assertEqual(instance.socket_addr, (self.DEFAULT_STR, self.DEFAULT_INT))
        
+    def test_get_not_field(self):
+        class CustomServer(self.FIELDSET):
+            @property
+            def socket_addr(self):
+                return (self.host, self.port)
+
+        with self.assertRaises(TypeError):
+            CustomServer().__get_field__('socket_addr')
+
+    def test_get_undefined_field(self):
+        class CustomServer(self.FIELDSET):
+            @property
+            def socket_addr(self):
+                return (self.host, self.port)
+
+        with self.assertRaises(TypeError):
+            CustomServer().__get_field__('undefined_field')
+
         

@@ -47,6 +47,7 @@ class FileConfigIOInterface(ConfigIOInterface):
         with open(self.__filename, 'w+', encoding='utf-8') as f:
             f.write(self.serialize(dataset))
             f.close()
+            
 
 class VirtualFile(FileConfigIOInterface):
 
