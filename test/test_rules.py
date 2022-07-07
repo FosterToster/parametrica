@@ -1,7 +1,7 @@
 import unittest
 from typing import Any
-from metaconfig.rules import Multirule, Rule, AND, OR
-from metaconfig.rules import Min, Max, InRange, MinLen, MaxLen, Match
+from parametrica.rules import Multirule, Rule, AND, OR
+from parametrica.rules import Min, Max, InRange, MinLen, MaxLen, Match
 
 class TestRules(unittest.TestCase):
 

@@ -1,6 +1,6 @@
-from metaconfig import MetaconfigSingletone, Field
-from metaconfig.predefined.network import BasicAuthHTTPServer, Server
-from metaconfig.io import YAMLFileConfigIO
+from parametrica import MetaconfigSingletone, Field
+from parametrica.predefined.network import BasicAuthHTTPServer, Server
+from parametrica.io import YAMLFileConfigIO
 
 class NestedBasicAuthHTTPServer(BasicAuthHTTPServer):
     nested = Field[Server](host='109.202.22.231', port=55000).label('XML интерфейс связанной кассовой станции')

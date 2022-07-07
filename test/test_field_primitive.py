@@ -1,4 +1,4 @@
-from metaconfig.types import Field, ABCField
+from parametrica.types import Field, ABCField
 from enum import Enum
 import unittest
 

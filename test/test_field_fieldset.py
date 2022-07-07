@@ -1,5 +1,5 @@
 import unittest
-from metaconfig import Field, Fieldset
+from parametrica import Field, Fieldset
 
 class TestFieldsetFields(unittest.TestCase):
 

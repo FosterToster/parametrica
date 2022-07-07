@@ -1,8 +1,8 @@
 
 import unittest
-from metaconfig.rules import Max
+from parametrica.rules import Max
 
-from metaconfig.types import Fieldset, Field
+from parametrica.types import Fieldset, Field
 
 
 class TestFieldMethods(unittest.TestCase):

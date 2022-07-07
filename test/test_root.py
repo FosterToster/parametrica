@@ -1,6 +1,6 @@
 import unittest
-from metaconfig import Field, Fieldset, Metaconfig, MetaconfigSingletone
-from metaconfig.io import VirtualYAMLFileConfigIO
+from parametrica import Field, Fieldset, Metaconfig, MetaconfigSingletone
+from parametrica.io import VirtualYAMLFileConfigIO
    
 
 class TestConfigRoot(unittest.TestCase):

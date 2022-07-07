@@ -1,4 +1,4 @@
-from metaconfig import Field
+from parametrica import Field
 from typing import Tuple
 import unittest
 

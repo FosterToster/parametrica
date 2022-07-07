@@ -1,6 +1,6 @@
 import unittest
 from typing import Tuple
-from metaconfig import Field, Fieldset
+from parametrica import Field, Fieldset
 
 class TestFieldsetIterableField(unittest.TestCase):
 
