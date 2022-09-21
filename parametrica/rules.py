@@ -6,9 +6,6 @@ class Rule(ABCRule):
     def __add__(self, other: 'ABCRule') -> 'ABCRule':
         return AND(self, other)
     
-    def __radd__(self, other: 'ABCRule') -> 'ABCRule':
-        return AND(self, other)
-
     def __or__(self, other: 'ABCRule') -> 'ABCRule':
         return OR(self, other)
 
@@ -22,7 +19,7 @@ class Multirule(Rule):
             else:
                 extends.append(rule)
         
-        self.__rules__ = extends
+        self.__rules__: Tuple[ABCRule] = extends
 
     def __str__(self):
         return f'{self.__class__.__name__}({", ".join(str(x) for x in self.__rules__)})'
@@ -44,12 +41,11 @@ class OR(Multirule):
     def try_check(self, value: Any) -> Any:
         for rule in self.__rules__:
             try:
-                rule(value)
-                break
+                return rule.try_check(value) or value
             except ValueError:
                 continue
         else:
-            ValueError(f'The value "{value}" does not satisfying no one of required rules')
+            raise ValueError(f'The value "{value}" does not satisfying no one of required rules')
 
 
 class Min(Rule[int]):
@@ -93,6 +89,7 @@ class MaxLen(Rule[list, str]):
 
 class Match(Rule[str]):
     def __init__(self, mask: str) -> None:
+        self.value = mask
         self.regex = re.compile(mask)
 
     def try_check(self, value):

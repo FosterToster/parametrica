@@ -3,4 +3,7 @@ __pycache__
 *.tmp
 *.json
 *.settings
+*.yaml
 run.py
+.coverage
+coverage.xml
