@@ -41,6 +41,14 @@ class Field(ABCField[T]):
         new_field.__rule__ = rule
         new_field.__get_default__()
         return new_field
+    
+    def password(self, value: bool = True):
+        '''
+        Set password property for field
+        '''
+        new_field = self.__clone__()
+        new_field.__password__ = value
+        return new_field
 
 
 class Fieldset(ABCFieldset):
