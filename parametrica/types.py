@@ -47,7 +47,7 @@ class Fieldset(ABCFieldset):
     ...
 
 
-class Metaconfig(ABCMetaconfig):
+class Parametrica(ABCMetaconfig):
 
     def __init__(self, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')) -> None:
         self._initialize(io_class)
@@ -60,7 +60,7 @@ class Metaconfig(ABCMetaconfig):
         self.__write__()
 
 
-class MetaconfigSingletone(Metaconfig):
+class ParametricaSingletone(Parametrica):
     def __init__(self, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')) -> None:
         ...
 
