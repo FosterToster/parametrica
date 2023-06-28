@@ -28,6 +28,7 @@ class ABCField(Generic[T]):
         self.__hint__ = ''
         self.__rule__: ABCRule = None
         self.__secret__ = False
+        self.__password__ = False
 
         self.__get_default__()
     
@@ -190,6 +191,7 @@ class ABCField(Generic[T]):
         new_field.__hint__ = self.__hint__
         new_field.__rule__ = self.__rule__
         new_field.__secret__ = self.__secret__
+        new_field.__password__ = self.__password__
 
         return new_field
 
@@ -205,6 +207,7 @@ class ABCField(Generic[T]):
                 'hint': self.__hint__,
                 'rule': str(self.__rule__) if self.__rule__ else None,
                 'secret': self.__secret__,
+                'password': self.__password__
             }
         else:
             return {
@@ -216,6 +219,7 @@ class ABCField(Generic[T]):
                 'label': self.__label__,
                 'hint': self.__hint__,
                 'secret': self.__secret__,
+                'password': self.__password__
             }
 
 

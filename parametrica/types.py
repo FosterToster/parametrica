@@ -41,13 +41,21 @@ class Field(ABCField[T]):
         new_field.__rule__ = rule
         new_field.__get_default__()
         return new_field
+    
+    def password(self, value: bool = True):
+        '''
+        Set password property for field
+        '''
+        new_field = self.__clone__()
+        new_field.__password__ = value
+        return new_field
 
 
 class Fieldset(ABCFieldset):
     ...
 
 
-class Metaconfig(ABCMetaconfig):
+class Parametrica(ABCMetaconfig):
 
     def __init__(self, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')) -> None:
         self._initialize(io_class)
@@ -60,7 +68,7 @@ class Metaconfig(ABCMetaconfig):
         self.__write__()
 
 
-class MetaconfigSingletone(Metaconfig):
+class ParametricaSingletone(Parametrica):
     def __init__(self, io_class: ConfigIOInterface = JsonFileConfigIO('settings.json')) -> None:
         ...
 
