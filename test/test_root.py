@@ -1,5 +1,5 @@
 import unittest
-from parametrica import Field, Fieldset, Metaconfig, MetaconfigSingletone
+from parametrica import Field, Fieldset, Parametrica, ParametricaSingletone
 from parametrica.io import VirtualYAMLFileConfigIO
    
 
@@ -13,11 +13,11 @@ class TestConfigRoot(unittest.TestCase):
             url = Field[str]('/test').label('secret url').secret()
 
 
-        class Config(Metaconfig):
+        class Config(Parametrica):
             server = Field[Server]()
 
 
-        class ConfigSingletone(MetaconfigSingletone):
+        class ConfigSingletone(ParametricaSingletone):
             server = Field[Server]()
 
 
