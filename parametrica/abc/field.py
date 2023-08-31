@@ -69,7 +69,7 @@ class ABCField(Generic[T]):
                         new = value.pop(0)
                         result.append(current.__set_value__(new))
                     except IndexError:
-                        result.append(current)
+                        pass
 
                 for new in value:
                     result.append(self.__generic_type__()().__set_value__(new))
