@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 import json
 import re
+import os
 
 
 class ConfigIOInterface(ABC):
@@ -35,6 +36,10 @@ class FileConfigIOInterface(ConfigIOInterface):
     @property
     def filename(self):
         return self.__filename
+    
+    @property
+    def edit_filename(self):
+        return f'{self.filename}.edit'
 
     def read(self) -> dict:
         with open(self.__filename, 'r', encoding='utf-8') as f:
@@ -44,9 +49,14 @@ class FileConfigIOInterface(ConfigIOInterface):
         return self.parse(data)
         
     def write(self, dataset: dict):
-        with open(self.__filename, 'w+', encoding='utf-8') as f:
-            f.write(self.serialize(dataset))
+        serialized = self.serialize(dataset)
+
+        with open(self.edit_filename, 'w+', encoding='utf-8') as f:
+            f.write(serialized)
             f.close()
+
+        os.replace(self.edit_filename, self.filename)
+        
             
 
 class VirtualFile(FileConfigIOInterface):
