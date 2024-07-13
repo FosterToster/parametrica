@@ -210,10 +210,15 @@ class ABCField(Generic[T]):
                 'password': self.__password__
             }
         else:
+            if self.__is_iterable_type__():
+                field_instance = self.__generic_type__()()
+            else:
+                field_instance = self.__get__(instance, instance.__class__)
+
             return {
                 'is_primitive': False,
                 'is_iterable': self.__is_iterable_type__(),
-                'type': self.__get__(instance, instance.__class__).__metadata__(instance),
+                'type': field_instance.__metadata__(instance),
                 # 'default': self.__get_default__(instance).__metadata__(instance),
                 'name': self.__name__,
                 'label': self.__label__,
