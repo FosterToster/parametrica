@@ -107,13 +107,13 @@ class YAMLFileConfigIO(FileConfigIOInterface):
             if field.__label__ == '' and field.__hint__ == '':
                 continue
             if parent_fieldset == '':
-                search = re.compile(rf'.*?(\n|^)({field_name}):', re.S)
+                search = re.compile(rf'.*?(?:\n|^)({field_name}):', re.S)
             else:
-                search = re.compile(rf'.*?(\n|^) {{{indent-2}}}{parent_fieldset}:.*?\n {{{indent}}}({field_name}):', re.S)
+                search = re.compile(rf'.*?(?:\n|^) {{{indent-2}}}{parent_fieldset}:.*?\n {{{indent}}}({field_name}):', re.S)
             match = search.match(resultstr)
             if match:
-                if len(match.regs) > 2:
-                    pos = match.regs[2][0]
+                if len(match.regs) > 1:
+                    pos = match.regs[1][0]
                     if field.__is_primitive_type__():
                         comment = ''
                         comment += field.__label__.replace("\n"," ").replace("\r", " ") + " " if field.__label__ else ''
