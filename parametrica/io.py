@@ -107,9 +107,9 @@ class YAMLFileConfigIO(FileConfigIOInterface):
             if field.__label__ == '' and field.__hint__ == '':
                 continue
             if parent_fieldset == '':
-                search = re.compile(r'\A.*{}({})\:'.format(indent*" ", field_name), re.RegexFlag.S)
+                search = re.compile(rf'.*?(?:\n|^)({field_name}):', re.S)
             else:
-                search = re.compile(r'\A.*{}{}\:.*?{}({})\:'.format((indent-2)*" ", parent_fieldset, indent*" ", field_name), re.RegexFlag.S)
+                search = re.compile(rf'.*?(?:\n|^) {{{indent-2}}}{parent_fieldset}:.*?\n {{{indent}}}({field_name}):', re.S)
             match = search.match(resultstr)
             if match:
                 if len(match.regs) > 1:
