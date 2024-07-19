@@ -109,7 +109,7 @@ class YAMLFileConfigIO(FileConfigIOInterface):
             if parent_fieldset == '':
                 search = re.compile(rf'.*?(\n|^)({field_name}):', re.S)
             else:
-                search = re.compile(rf'.*?(\n|^) {{{indent-2}}}{parent_fieldset}:.*? {{{indent}}}({field_name}):', re.S)
+                search = re.compile(rf'.*?(\n|^) {{{indent-2}}}{parent_fieldset}:.*?\n {{{indent}}}({field_name}):', re.S)
             match = search.match(resultstr)
             if match:
                 if len(match.regs) > 2:
