@@ -2,6 +2,7 @@ from abc import abstractmethod, ABC
 import json
 import re
 import os
+import io
 
 
 class ConfigIOInterface(ABC):
@@ -142,5 +143,83 @@ class YAMLFileConfigIO(FileConfigIOInterface):
 class VirtualYAMLFileConfigIO(YAMLFileConfigIO, VirtualFile):
     pass
 
+
+class INIFileConfigIO(FileConfigIOInterface):
+    def __init__(self, filename: str, *, export_comments: bool = True) -> None:
+        super().__init__(filename)
+        self.export_comments = export_comments
+        from importlib import import_module
+        try:
+            self.configparser = import_module('configparser')
+        except ModuleNotFoundError as e:
+            raise ImportError('Package "configparser" need to be installed.') from e
+        
+    def __add_comments__(self, section: str, config, field: 'ABCField', add_empty_str: bool = False):
+        if not self.export_comments:
+            return
+        
+        if field.__label__:
+            config.set(section, f'; {field.__label__}')
+        if field.__hint__:
+            config.set(section, f'; hint: {field.__hint__}')
+            
+        if (field.__label__ or field.__hint__) and add_empty_str:
+            config.set(section, '')
+        
+    def serialize(self, dataset: dict) -> str:
+        config = self.configparser.ConfigParser(allow_no_value=True)
+        for key, param in dataset.items():
+            if not isinstance(param, dict):
+                field = self.parent.__get_field__(key)
+                self.__add_comments__('', config, field)
+                config.set('', key, str(param))
+            
+            else:
+                config.add_section(key)
+                section_field = self.parent.__get_field__(key)
+                # self.__add_comments__(key, config, section_field, True)
+                
+                for subkey, subparam in param.items():
+                    if isinstance(subparam, dict):
+                        raise ValueError('Maximum attachment depth is 1 for INI format')
+                    fieldset = section_field.__get__(self.parent, self.parent.__class__)
+                    field = fieldset.__get_field__(subkey)
+                    self.__add_comments__(key, config, field)
+                    config.set(key, subkey, str(subparam))
+        
+        string_io = io.StringIO()
+        config.write(string_io)
+        result_str = string_io.getvalue()[:-2]
+        
+        for section_name, param in dataset.items():
+            if not isinstance(param, dict):
+                continue
+
+            field = self.parent.__get_field__(section_name)
+            comment_str = ''
+            if field.__label__:
+                comment_str += f'; {field.__label__}\n'
+            if field.__hint__:
+                comment_str += f'; hint: {field.__hint__}\n'
+            
+            if comment_str:
+                index = result_str.index(f'\n[{section_name}]\n') + 1
+                result_str = result_str[:index] + comment_str + result_str[index:]
+        
+        return result_str
+        
+    def parse(self, data: str) -> dict:
+        config = self.configparser.ConfigParser(allow_no_value=True)
+        config.read_string(data)
+        result = config._sections
+        result.update(config.defaults())
+        return result
+
+
+class VirtualINIFileConfigIO(INIFileConfigIO, VirtualFile):
+    pass
+
+
 from .abc.fieldset import ABCMetaconfig
 from .abc.fieldset import _FieldRW
+from .abc.field import ABCField
