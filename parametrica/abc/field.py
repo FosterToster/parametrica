@@ -134,19 +134,9 @@ class ABCField(Generic[T]):
         # except ValueError as e:
         #     raise ValueError(f'{self.__name__} -> {e}') from e
 
-    def __parse_list_str__(self, value: str) -> tuple[str]:
-        if value == '()':
-            return ()
-        elif value[0] == '(' and value[-1] == ')':
-            return tuple(value[1:-1].split(', '))
-        else:
-            return (value, )
-
     def __normalize_value__(self, value: Any) -> T:
         if self.__is_iterable_type__():
-            if isinstance(value, str):
-                value = self.__parse_list_str__(value)
-            elif not hasattr(value, '__iter__'):
+            if not hasattr(value, '__iter__'):
                 value = (value,)
 
             return tuple(self.__validate_value__( self.__ensure_type__( item ) ) for item in value)

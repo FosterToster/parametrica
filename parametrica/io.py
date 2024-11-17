@@ -2,7 +2,9 @@ from abc import abstractmethod, ABC
 import json
 import re
 import os
-import io
+from typing import List, Union, Optional
+from dataclasses import dataclass
+from collections import defaultdict
 
 
 class ConfigIOInterface(ABC):
@@ -144,75 +146,134 @@ class VirtualYAMLFileConfigIO(YAMLFileConfigIO, VirtualFile):
     pass
 
 
+@dataclass
+class _INIFieldItem:
+    name: str
+    value: Union[str, int, float, None]
+    label: Optional[str] = None
+    hint: Optional[str] = None
+    
+    def to_ini_str(self, export_comments: bool) -> str:
+        result_str = ''
+        if export_comments:
+            if self.label:
+                result_str += f'; {self.label}\n'
+            if self.hint:
+                result_str += f'; hint: {self.hint}\n'
+        
+        result_str += f'{self.name} = {self.value if self.value is not None else None}\n'
+        return result_str
+
+
+@dataclass
+class _INISectionItem:
+    name: str
+    items: List[_INIFieldItem]
+    label: Optional[str] = None
+    hint: Optional[str] = None
+    
+    def to_ini_str(self, export_comments: bool) -> str:
+        result_str = ''
+        if export_comments:
+            if self.label:
+                result_str += f'; {self.label}\n'
+            if self.hint:
+                result_str += f'; hint: {self.hint}\n'
+            
+        result_str += f'[{self.name}]\n'
+        for item in self.items:
+            result_str += item.to_ini_str(export_comments)
+        
+        return result_str
+
+
 class INIFileConfigIO(FileConfigIOInterface):
     def __init__(self, filename: str, *, export_comments: bool = True) -> None:
         super().__init__(filename)
         self.export_comments = export_comments
-        from importlib import import_module
-        try:
-            self.configparser = import_module('configparser')
-        except ModuleNotFoundError as e:
-            raise ImportError('Package "configparser" need to be installed.') from e
+    
+    def __make_section__(self, fieldset: '_FieldRW', ini_sections: list, fields: dict, section_path: list):
+        section_field = fieldset.__get_field__(section_path[-1])
         
-    def __add_comments__(self, section: str, config, field: 'ABCField', add_empty_str: bool = False):
-        if not self.export_comments:
-            return
+        in_section_items: List[_INIFieldItem] = list()
+        ini_sections.append(
+            _INISectionItem(
+                name=".".join(section_path),
+                items=in_section_items,
+                label=section_field.__label__ or None,
+                hint=section_field.__hint__ or None
+            )
+        )
         
-        if field.__label__:
-            config.set(section, f'; {field.__label__}')
-        if field.__hint__:
-            config.set(section, f'; hint: {field.__hint__}')
-            
-        if (field.__label__ or field.__hint__) and add_empty_str:
-            config.set(section, '')
+        section_fieldset = section_field.__get__(fieldset, fieldset.__class__)
+        for key, value in fields.items():
+            if isinstance(value, dict):
+                self.__make_section__(section_fieldset, ini_sections, value, section_path=[*section_path, key])
+            else:
+                field = section_fieldset.__get_field__(key)
+                in_section_items.append(_INIFieldItem(
+                    name=key,
+                    value=value,
+                    label=field.__label__ or None,
+                    hint=field.__hint__ or None
+                ))
         
     def serialize(self, dataset: dict) -> str:
-        config = self.configparser.ConfigParser(allow_no_value=True)
-        for key, param in dataset.items():
-            if not isinstance(param, dict):
-                field = self.parent.__get_field__(key)
-                self.__add_comments__('', config, field)
-                config.set('', key, str(param))
-            
+        default_list_items: List[_INIFieldItem] = list()
+        section_list: List[_INISectionItem] = list()
+        section_list.append(_INISectionItem(name='', items=default_list_items))
+        for field_name, fields in dataset.items():
+            if isinstance(fields, dict):
+                self.__make_section__(self.parent, section_list, fields, [field_name])
             else:
-                config.add_section(key)
-                section_field = self.parent.__get_field__(key)
-                # self.__add_comments__(key, config, section_field, True)
-                
-                for subkey, subparam in param.items():
-                    if isinstance(subparam, dict):
-                        raise ValueError('Maximum attachment depth is 1 for INI format')
-                    fieldset = section_field.__get__(self.parent, self.parent.__class__)
-                    field = fieldset.__get_field__(subkey)
-                    self.__add_comments__(key, config, field)
-                    config.set(key, subkey, str(subparam))
-        
-        string_io = io.StringIO()
-        config.write(string_io)
-        result_str = string_io.getvalue()[:-2]
-        
-        for section_name, param in dataset.items():
-            if not isinstance(param, dict):
-                continue
+                field = self.parent.__get_field__(field_name)
+                default_list_items.append(
+                    _INIFieldItem(
+                        name=field_name,
+                        value=fields,
+                        label=field.__label__,
+                        hint=field.__hint__
+                    )
+                )
 
-            field = self.parent.__get_field__(section_name)
-            comment_str = ''
-            if field.__label__:
-                comment_str += f'; {field.__label__}\n'
-            if field.__hint__:
-                comment_str += f'; hint: {field.__hint__}\n'
-            
-            if comment_str:
-                index = result_str.index(f'\n[{section_name}]\n') + 1
-                result_str = result_str[:index] + comment_str + result_str[index:]
+        result_str = ''
+        for section in section_list:
+            if section.name == '' and len(section.items) == 0:
+                continue
+            result_str += section.to_ini_str(self.export_comments) + '\n'
+
+        return result_str[:-2]
+    
+    def __get_current_lvl__(self, dataset: dict, path: list):
+        result = dataset
+        for lvl in path:
+            result = result[lvl]
         
-        return result_str
+        return result
+    
+    def parse(self, data):
+        def defaultdict_fabric():
+            return defaultdict(defaultdict_fabric)
         
-    def parse(self, data: str) -> dict:
-        config = self.configparser.ConfigParser(allow_no_value=True)
-        config.read_string(data)
-        result = config._sections
-        result.update(config.defaults())
+        result = defaultdict(defaultdict_fabric)
+        
+        current_section = result
+        for line in data.split('\n'):
+            line = line.strip()
+            if line == '' or line[0] == ';':
+                continue
+            elif line == '[]':
+                current_section = result
+            elif line[0] == '[':
+                current_section = self.__get_current_lvl__(result, line[1:-1].split('.'))
+            elif '=' not in line:
+                current_section[line] = ''
+            else:
+                key, value = line.split('=', maxsplit=1)
+                key = key.strip()
+                value = value.strip()
+                current_section[key] = value
+
         return result
 
 
@@ -222,4 +283,3 @@ class VirtualINIFileConfigIO(INIFileConfigIO, VirtualFile):
 
 from .abc.fieldset import ABCMetaconfig
 from .abc.fieldset import _FieldRW
-from .abc.field import ABCField
