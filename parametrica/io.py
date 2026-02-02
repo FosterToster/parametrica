@@ -62,15 +62,6 @@ class FileConfigIOInterface(ConfigIOInterface):
         # Replace original file with edit file
         os.replace(self.edit_filename, self.filename)
 
-        # Write new file on disk
-        containing_dir = os.path.dirname(self.filename) or '.'
-        dir_fd = os.open(containing_dir, os.O_DIRECTORY)
-        try:
-            os.fsync(dir_fd)
-        finally:
-            os.close(dir_fd)
-
-
 
 class VirtualFile(FileConfigIOInterface):
 
