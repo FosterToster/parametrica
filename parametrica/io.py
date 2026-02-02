@@ -50,12 +50,26 @@ class FileConfigIOInterface(ConfigIOInterface):
         
     def write(self, dataset: dict):
         serialized = self.serialize(dataset)
-        fd = os.open(self.edit_filename, os.O_WRONLY|os.O_CREAT)
-        os.write(fd, serialized.encode(encoding="utf-8"))
+
+        # Write data to edit file
+        fd = os.open(self.edit_filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+        writed_bytes = os.write(fd, serialized.encode(encoding="utf-8"))
+        if writed_bytes == 0 and serialized != '':
+            raise IOError(f'0 bytes were written to the file {self.edit_filename}')
         os.fsync(fd)
         os.close(fd)
 
+        # Replace original file with edit file
         os.replace(self.edit_filename, self.filename)
+
+        # Write new file on disk
+        containing_dir = os.path.dirname(self.filename) or '.'
+        dir_fd = os.open(containing_dir, os.O_DIRECTORY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+
 
 
 class VirtualFile(FileConfigIOInterface):
